@@ -51,14 +51,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "nrf_delay.h"
-#include "boards.h"
+
+//#include "boards.h"
 
 
 #include "pin_mapper.h"
 
+#include "nrf_drv_systick.h"
 #include "nrf_gpio.h"
 
 
+static volatile uint32_t gu32_systick = 0;
+
+void SysTick_Handler(void)
+{
+  gu32_systick++;
+
+   nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_4__PORT, LED_4__PIN ) );
+}
 
 
 /**
@@ -66,22 +76,54 @@
  */
 int main(void)
 {
-  
+    // Init systick
+   // nrf_drv_systick_init();
 
     nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
-  
+    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_2__PORT, LED_2__PIN ) );
+    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_3__PORT, LED_3__PIN ) );
+    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_4__PORT, LED_4__PIN ) );
+    
+  SysTick->LOAD  = (uint32_t)(( SystemCoreClock / 1000 ) - 1UL);                         /* set reload register --> 1ms */
+  NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
+  SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
+  SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
+                   SysTick_CTRL_TICKINT_Msk   |
+                   SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
+
 
 
     /* Configure board. */
    // bsp_board_init(BSP_INIT_LEDS);
 
+
+   uint32_t cnt = gu32_systick;
+   uint32_t cnt_prev = cnt;
+
+  // NOTE: Systick counts down, therefore it would be beter to initiate systick IRQ and handle there
+
     /* Toggle LEDs. */
     while (true)
     {
 
-      nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
+      cnt = gu32_systick;
 
-      nrf_delay_ms( 1000 );
+      if (((uint32_t)( cnt - cnt_prev )) >= 1000 )
+      {
+          cnt_prev = cnt;
+
+          nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
+          nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_2__PORT, LED_2__PIN ) );
+          nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_3__PORT, LED_3__PIN ) );
+         
+      }
+
+
+
+
+
+
+     // nrf_delay_ms( 1000 );
 
       /*
         for (int i = 0; i < LEDS_NUMBER; i++)
