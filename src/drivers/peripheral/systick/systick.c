@@ -3,14 +3,14 @@
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@file      main.c
+*@file      app.c
 *@author    Ziga Miklosic
 *@date      22.10.2022
 *@project   Base code for nRF5_nRF52840_DevBoard
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@addtogroup MAIN
+*@addtogroup APP
 * @{ <!-- BEGIN GROUP -->
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -18,23 +18,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-// Project configurations
-#include "project_config.h"
-#include "pin_mapper.h"
-
-// Application
-#include "app.h"
-
-// Periphery
+#include "nrf_drv_systick.h"
 #include "systick.h"
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *    Frequency of systick interrupt handler
+ *
+ *  Unit: Hz
+ */
+#define SYSTICK_PERIOD_HZ               ( 1000UL )    
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -44,66 +43,67 @@
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *    Systick counter
+ */
+static volatile uint32_t gu32_systick_cnt = 0;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*	Main entry function
+*       Systick ISR handler
 *
 * @return   void
 */
 ////////////////////////////////////////////////////////////////////////////////
-int main(void)
+void SysTick_Handler(void)
 {
-   uint32_t cnt           = systick_get_ms();
-   uint32_t cnt_p_10ms    = cnt;
-   uint32_t cnt_p_100ms   = cnt;
-   uint32_t cnt_p_1000ms  = cnt;
-
-    // Init systick
-    systick_init();
-
-    // Init application
-    app_init();
-
-    // Main loop
-    while ( 1 )
-    {
-        // Get current systick
-        cnt = systick_get_ms();
-
-        // 10ms loop
-        if (((uint32_t)( cnt - cnt_p_10ms )) >= 10UL )
-        {
-            cnt_p_10ms = cnt;
-
-            app_hndl_10ms();
-        }
-
-        // 100ms loop
-        if (((uint32_t)( cnt - cnt_p_100ms )) >= 100UL )
-        {
-            cnt_p_100ms = cnt;
-
-            app_hndl_100ms();
-        }
-
-        // 1000ms loop
-        if (((uint32_t)( cnt - cnt_p_1000ms )) >= 1000UL )
-        {
-            cnt_p_1000ms = cnt;
-
-            app_hndl_1000ms();
-        }
-    }
+    gu32_systick_cnt++;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       Initialize systick
+*
+* @return   status  - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+systick_status_t systick_init(void)
+{
+    systick_status_t status = eSYSTICK_OK;
+
+    // Set load register
+    SysTick->LOAD  = (uint32_t)(( SystemCoreClock / SYSTICK_PERIOD_HZ ) - 1UL);                      
+    
+    // Set interrupt priority
+    NVIC_SetPriority ( SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL ); 
+    
+    // Clear counter
+    SysTick->VAL = 0UL;                                            
+   
+    // Enable IRQ and start timer
+    SysTick->CTRL = ( SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk );                        
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       Get system tick counts
+*
+* @return   gu32_systick_cnt  - Miliseconds system tick counter
+*/
+////////////////////////////////////////////////////////////////////////////////
+const uint32_t systick_get_ms(void)
+{
+    return (const uint32_t) gu32_systick_cnt;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
 * @} <!-- END GROUP -->
 */
 ////////////////////////////////////////////////////////////////////////////////
-
