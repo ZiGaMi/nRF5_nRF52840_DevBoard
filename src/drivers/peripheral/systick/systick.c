@@ -6,7 +6,7 @@
 *@file      app.c
 *@author    Ziga Miklosic
 *@date      22.10.2022
-*@project   Base code for nRF5_nRF52840_DevBoard
+*@version   V1.0.0  (nRF5)
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**

@@ -46,6 +46,22 @@
 #define LED_4__PORT         0
 #define LED_4__PIN          16
 
+// BUTTON 1
+#define BTN_1__PORT         0
+#define BTN_1__PIN          11
+
+// BUTTON 2
+#define BTN_2__PORT         0
+#define BTN_2__PIN          12
+
+// BUTTON 3
+#define BTN_3__PORT         0
+#define BTN_3__PIN          24
+
+// BUTTON 4
+#define BTN_4__PORT         0
+#define BTN_4__PIN          25
+
 
 
 #endif // __PIN_MAPPER_H

@@ -24,7 +24,8 @@
 
 #include "pin_mapper.h"
 
-#include "nrf_gpio.h"
+#include "gpio.h"
+//#include "nrf_gpio.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -58,13 +59,8 @@
 void app_init(void)
 {
     // Init periphery
-    //gpio_init();
+    gpio_init();
 
-
-    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
-    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_2__PORT, LED_2__PIN ) );
-    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_3__PORT, LED_3__PIN ) );
-    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_4__PORT, LED_4__PIN ) );
 
 }
 
@@ -77,7 +73,8 @@ void app_init(void)
 ////////////////////////////////////////////////////////////////////////////////
 void app_hndl_10ms(void)
 {
-    nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
+    gpio_toggle( eGPIO_LED_1 );
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +86,9 @@ void app_hndl_10ms(void)
 ////////////////////////////////////////////////////////////////////////////////
 void app_hndl_100ms(void)
 {
-      nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_2__PORT, LED_2__PIN ) );
+    gpio_toggle( eGPIO_LED_2 );
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +100,8 @@ void app_hndl_100ms(void)
 ////////////////////////////////////////////////////////////////////////////////
 void app_hndl_1000ms(void)
 {
-    nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_3__PORT, LED_3__PIN ) );
+    gpio_toggle( eGPIO_LED_3 );
+
 
 }
 

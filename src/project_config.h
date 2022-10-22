@@ -24,7 +24,24 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * 	Project debug mode
+ */
+#ifdef DEBUG
+    #define PROJECT_CONFIG_DEBUG_EN		( 0 )
+#else
+    #define PROJECT_CONFIG_DEBUG_EN		( 0 )
+#endif
 
+/**
+ * 	Project assertion
+ */
+#if ( PROJECT_CONFIG_DEBUG_EN )
+    void project_config_assert_fail(void);
+    #define PROJECT_CONFIG_ASSERT(x)			if( !( x )) { project_config_assert_fail(); }
+#else
+    #define PROJECT_CONFIG_ASSERT(x)			{ ; }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
