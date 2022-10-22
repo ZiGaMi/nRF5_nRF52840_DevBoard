@@ -1,0 +1,9 @@
+[submodule "src/drivers/hmi/button/button"]
+	path = src/drivers/hmi/button/button
+	url = ../../GeneralEmbeddedCLibraries/button.git
+[submodule "src/middleware/filter"]
+	path = src/middleware/filter
+	url = ../../GeneralEmbeddedCLibraries/filter.git
+[submodule "src/middleware/ring_buffer"]
+	path = src/middleware/ring_buffer
+	url = ../../GeneralEmbeddedCLibraries/ring_buffer.git

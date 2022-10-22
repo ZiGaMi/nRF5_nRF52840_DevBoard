@@ -24,6 +24,23 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+// Float definition
+typedef float float32_t;
+
+/**
+ * 	My floating PI
+ */
+#define MY_PI		((float32_t)( 3.1415926 ))
+#define MY_TWOPI	((float32_t)( 2.0 * MY_PI ))
+#define MY_PI_OVER_FOUR	((float32_t)( MY_PI / 4.0 ))
+
+/**
+ * 	Common goods
+ */
+#define RAD_TO_DEG	((float32_t) ( 180.0 / MY_PI ))	// Leave double
+#define DEG_TO_RAD	((float32_t) ( MY_PI / 180.0 ))	// Leave double
+
+
 /**
  * 	Project debug mode
  */

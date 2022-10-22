@@ -71,10 +71,10 @@ static const gpio_cfg_table_t g_gpio_cfg_table[ eGPIO_NUM_OF ] =
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // INPUTS		PORT                      PIN                   DIRECTION                           PULL DEVICE                       INIT STATE
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    [eGPIO_BTN_1]   = {   .port = BTN_1__PORT,    .pin = BTN_1__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = 0                 },
-    [eGPIO_BTN_2]   = {   .port = BTN_2__PORT,    .pin = BTN_2__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = 0                 },
-    [eGPIO_BTN_3]   = {   .port = BTN_3__PORT,    .pin = BTN_3__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = 0                 },
-    [eGPIO_BTN_4]   = {   .port = BTN_4__PORT,    .pin = BTN_4__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = 0                 },
+    [eGPIO_BTN_1]   = {   .port = BTN_1__PORT,    .pin = BTN_1__PIN,    .dir = NRF_GPIO_PIN_DIR_INPUT,      .pull = NRF_GPIO_PIN_PULLUP,      .init_state = 0                 },
+    [eGPIO_BTN_2]   = {   .port = BTN_2__PORT,    .pin = BTN_2__PIN,    .dir = NRF_GPIO_PIN_DIR_INPUT,      .pull = NRF_GPIO_PIN_PULLUP,      .init_state = 0                 },
+    [eGPIO_BTN_3]   = {   .port = BTN_3__PORT,    .pin = BTN_3__PIN,    .dir = NRF_GPIO_PIN_DIR_INPUT,      .pull = NRF_GPIO_PIN_PULLUP,      .init_state = 0                 },
+    [eGPIO_BTN_4]   = {   .port = BTN_4__PORT,    .pin = BTN_4__PIN,    .dir = NRF_GPIO_PIN_DIR_INPUT,      .pull = NRF_GPIO_PIN_PULLUP,      .init_state = 0                 },
 
 };
 
