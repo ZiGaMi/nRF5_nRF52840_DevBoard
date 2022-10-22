@@ -53,22 +53,43 @@
 #include "nrf_delay.h"
 #include "boards.h"
 
+
+#include "pin_mapper.h"
+
+#include "nrf_gpio.h"
+
+
+
+
 /**
  * @brief Function for application main entry.
  */
 int main(void)
 {
+  
+
+    nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
+  
+
+
     /* Configure board. */
-    bsp_board_init(BSP_INIT_LEDS);
+   // bsp_board_init(BSP_INIT_LEDS);
 
     /* Toggle LEDs. */
     while (true)
     {
+
+      nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP( LED_1__PORT, LED_1__PIN ) );
+
+      nrf_delay_ms( 1000 );
+
+      /*
         for (int i = 0; i < LEDS_NUMBER; i++)
         {
             bsp_board_led_invert(i);
             nrf_delay_ms(1000);
         }
+        */
     }
 }
 

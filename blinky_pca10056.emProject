@@ -61,7 +61,6 @@
     </folder>
     <folder Name="Application">
       <file file_name="src/main.c" />
-      <file file_name="src/config/sdk_config.h" />
     </folder>
     <folder Name="None">
       <file file_name="C:/nrf_sdk/modules/nrfx/mdk/ses_startup_nrf52840.s" />
@@ -73,6 +72,11 @@
       debug_register_definition_file="C:/nrf_sdk/modules/nrfx/mdk/nrf52840.svd" />
     <folder Name="Drivers">
       <folder Name="Peripheral" />
+    </folder>
+    <folder Name="Configurations">
+      <file file_name="src/config/sdk_config.h" />
+      <file file_name="src/project_config.c" />
+      <file file_name="src/pin_mapper.h" />
     </folder>
   </project>
   <configuration
