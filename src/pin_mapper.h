@@ -29,38 +29,103 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+/*******************************************************************************
+ * 	PORT 0
+ ******************************************************************************/
 
-// LED 1
-#define LED_1__PORT         0
-#define LED_1__PIN          13
+// P0.00
+// Not used...
 
-// LED 2
-#define LED_2__PORT         0
-#define LED_2__PIN          14
+// P0.01
+// Not used...
 
-// LED 3
-#define LED_3__PORT         0
-#define LED_3__PIN          15
+// P0.02
+// Not used...
 
-// LED 4
-#define LED_4__PORT         0
-#define LED_4__PIN          16
+// P0.03
+// Not used...
 
-// BUTTON 1
+// P0.04
+// Not used...
+
+// P0.05
+// Not used..
+
+// P0.06
+#define DBG_UART_TX__PORT   0
+#define DBG_UART_TX__PIN    6
+
+// P0.07
+// Not used...
+
+// P0.08
+#define DBG_UART_RX__PORT   0
+#define DBG_UART_RX__PIN    8
+
+// P0.09
+// Not used...
+
+// P0.10
+// Not used...
+
+// P0.11
 #define BTN_1__PORT         0
 #define BTN_1__PIN          11
 
-// BUTTON 2
+// P0.12
 #define BTN_2__PORT         0
 #define BTN_2__PIN          12
 
-// BUTTON 3
+// P0.13
+#define LED_1__PORT         0
+#define LED_1__PIN          13
+
+// P0.14
+#define LED_2__PORT         0
+#define LED_2__PIN          14
+
+// P0.15
+#define LED_3__PORT         0
+#define LED_3__PIN          15
+
+// P0.16
+#define LED_4__PORT         0
+#define LED_4__PIN          16
+
+// P0.17
+// Not used...
+
+// P0.18
+// Not used...
+
+// P0.19
+// Not used...
+
+// P0.20
+// Not used...
+
+// P0.21
+// Not used...
+
+// P0.22
+// Not used..
+
+// P0.23
+// Not used..
+
+// P0.24
 #define BTN_3__PORT         0
 #define BTN_3__PIN          24
 
-// BUTTON 4
+// P0.25
 #define BTN_4__PORT         0
 #define BTN_4__PIN          25
+
+
+/*******************************************************************************
+ * 	PORT 1
+ ******************************************************************************/
+
 
 
 
