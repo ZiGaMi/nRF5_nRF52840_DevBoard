@@ -86,53 +86,53 @@ static const gpio_cfg_table_t g_gpio_cfg_table[ eGPIO_NUM_OF ] =
 /**
 *	GPIO initialization
 *
-* @param[in] 	nones
-* @return 		status 		- Status of operation
+* @return 	status 	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 gpio_status_t gpio_init(void)
 {
-    gpio_status_t 	status 		= eGPIO_OK;
-    uint32_t 	num_of_inputs 	= 0UL;
+    gpio_status_t status = eGPIO_OK;
 
-    // Is init
-    PROJECT_CONFIG_ASSERT( false == gb_is_init );
-
-    // Init all GPIOs
-    for ( uint32_t pin = 0; pin < eGPIO_NUM_OF; pin++ )
+    if ( false == gb_is_init )
     {
-        // Set output state
-        if ( NRF_GPIO_PIN_DIR_OUTPUT == g_gpio_cfg_table[pin].dir )
+        // Init all GPIOs
+        for ( uint32_t pin = 0; pin < eGPIO_NUM_OF; pin++ )
         {
-            if ( eGPIO_HIGH == g_gpio_cfg_table[pin].init_state )
+            // Set output state
+            if ( NRF_GPIO_PIN_DIR_OUTPUT == g_gpio_cfg_table[pin].dir )
             {
-                nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 1 );
-            }
-            else if ( eGPIO_LOW == g_gpio_cfg_table[pin].init_state  )
-            {
-                nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 0 );
+                if ( eGPIO_HIGH == g_gpio_cfg_table[pin].init_state )
+                {
+                    nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 1 );
+                }
+                else if ( eGPIO_LOW == g_gpio_cfg_table[pin].init_state  )
+                {
+                    nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 0 );
+                }
+                else
+                {
+                        // No actions...
+                }
+
+                // Configure as output
+                nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ));
             }
             else
             {
-                    // No actions...
+                // Configure as input
+                nrf_gpio_cfg_input( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), g_gpio_cfg_table[pin].pull );
             }
-
-            // Configure as output
-            nrf_gpio_cfg_output( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ));
         }
-        else
-        {
-            // Configure as input
-            nrf_gpio_cfg_input( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), g_gpio_cfg_table[pin].pull );
 
-            num_of_inputs++;
+        // Alles gut - init succeed
+        if ( eGPIO_OK == status )
+        {
+            gb_is_init = true;
         }
     }
-
-    // Alles gut - init succeed
-    if ( eGPIO_OK == status )
+    else
     {
-        gb_is_init = true;
+        status = eGPIO_ERROR;
     }
 
     return status;
@@ -174,19 +174,18 @@ gpio_state_t gpio_get(const gpio_pins_t pin)
 {
     gpio_state_t pin_state = eGPIO_UKNOWN;
 
-    // Is init
-    PROJECT_CONFIG_ASSERT( true == gb_is_init );
-
-    // Check input
     PROJECT_CONFIG_ASSERT( pin < eGPIO_NUM_OF );
 
-    if ( 1 == nrf_gpio_pin_read( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin )))
+    if ( true == gb_is_init )
     {
-        pin_state = eGPIO_HIGH;
-    }
-    else
-    {
-        pin_state = eGPIO_LOW;
+        if ( 1 == nrf_gpio_pin_read( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin )))
+        {
+            pin_state = eGPIO_HIGH;
+        }
+        else
+        {
+            pin_state = eGPIO_LOW;
+        }
     }
 
     return pin_state;
@@ -203,23 +202,22 @@ gpio_state_t gpio_get(const gpio_pins_t pin)
 ////////////////////////////////////////////////////////////////////////////////
 void gpio_set(const gpio_pins_t pin, const gpio_state_t state)
 {
-    // Is init
-    PROJECT_CONFIG_ASSERT( true == gb_is_init );
-
-    // Check input
     PROJECT_CONFIG_ASSERT( pin < eGPIO_NUM_OF );
 
-    if ( eGPIO_HIGH == state )
+    if ( true == gb_is_init )
     {
-        nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 1 );
-    }
-    else if ( eGPIO_LOW == state )
-    {
-        nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 0 );
-    }
-    else
-    {
-            // No actions...
+        if ( eGPIO_HIGH == state )
+        {
+            nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 1 );
+        }
+        else if ( eGPIO_LOW == state )
+        {
+            nrf_gpio_pin_write( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), 0 );
+        }
+        else
+        {
+                // No actions...
+        }
     }
 }
 
@@ -233,13 +231,12 @@ void gpio_set(const gpio_pins_t pin, const gpio_state_t state)
 ////////////////////////////////////////////////////////////////////////////////
 void gpio_toggle(const gpio_pins_t pin)
 {
-    // Is init
-    PROJECT_CONFIG_ASSERT( true == gb_is_init );
-
-    // Check input
     PROJECT_CONFIG_ASSERT( pin < eGPIO_NUM_OF );
 
-    nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port,  g_gpio_cfg_table[pin].pin ));
+    if ( true == gb_is_init )
+    {
+       nrf_gpio_pin_toggle( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port,  g_gpio_cfg_table[pin].pin ));
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

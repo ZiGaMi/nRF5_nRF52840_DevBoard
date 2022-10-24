@@ -28,7 +28,6 @@
 
 #include "button/src/button.h"
 
-//#include "nrf_gpio.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -65,7 +64,7 @@ void app_init(void)
     // Init periphery
     gpio_init();
 
-
+    // Init buttons
     if ( eBUTTON_OK != button_init())
     {
         PROJECT_CONFIG_ASSERT( 0 );

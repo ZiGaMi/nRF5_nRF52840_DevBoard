@@ -45,7 +45,7 @@ typedef float float32_t;
  * 	Project debug mode
  */
 #ifdef DEBUG
-    #define PROJECT_CONFIG_DEBUG_EN		( 0 )
+    #define PROJECT_CONFIG_DEBUG_EN		( 1 )
 #else
     #define PROJECT_CONFIG_DEBUG_EN		( 0 )
 #endif
