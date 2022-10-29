@@ -30,6 +30,7 @@
 
 // Middleware
 #include "middleware/cli/cli/src/cli.h"
+#include "middleware/parameters/parameters/src/par.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +84,12 @@ void app_init(void)
         // Register btn event callbacks
         button_register_callback( eBUTTON_1, &app_user_btn_pressed, &app_user_btn_released );
     }
+
+	// Init device paramters
+	if ( ePAR_OK != par_init())
+	{
+		PROJECT_CONFIG_ASSERT( 0 );
+	}
 
 }
 
