@@ -32,7 +32,9 @@
 #include "systick.h"
 
 
-#include "uart_dbg/uart_dbg.h"
+#include "middleware/cli/cli/src/cli.h"
+
+//#include "uart/uart_dbg.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +78,9 @@ int main(void)
     app_init();
 
 	
-	uart_dbg_init();
+	//uart_dbg_init();
 
+	cli_init();
 
 	static uint8_t u8_buff[64] = {0};
 	uint32_t idx = 0;
@@ -95,6 +98,8 @@ int main(void)
             cnt_p_10ms = cnt;
 
             app_hndl_10ms();
+
+			cli_hndl();
         }
 
         // 100ms loop
@@ -105,7 +110,7 @@ int main(void)
             app_hndl_100ms();
 	
 
-			while ( eUART_DBG_OK == uart_dbg_get( &u8_buff[idx] ))
+		/*	while ( eUART_DBG_OK == uart_dbg_get( &u8_buff[idx] ))
 			{
 				
 
@@ -128,7 +133,7 @@ int main(void)
 
 					idx++;
 				}
-			}
+			}*/
 
 			//uart_dbg_write( "Hello World \r" );
 

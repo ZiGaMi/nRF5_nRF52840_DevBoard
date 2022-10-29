@@ -7,3 +7,6 @@
 [submodule "src/middleware/ring_buffer"]
 	path = src/middleware/ring_buffer
 	url = ../../GeneralEmbeddedCLibraries/ring_buffer.git
+[submodule "src/middleware/cli/cli"]
+	path = src/middleware/cli/cli
+	url = ../../GeneralEmbeddedCLibraries/cli.git
