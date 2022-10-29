@@ -31,12 +31,6 @@
 // Periphery
 #include "systick.h"
 
-
-#include "middleware/cli/cli/src/cli.h"
-
-//#include "uart/uart_dbg.h"
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,24 +61,11 @@ int main(void)
 	uint32_t cnt_p_100ms   = cnt;
 	uint32_t cnt_p_1000ms  = cnt;
 
-
-
-
-
     // Init systick
     systick_init();
 
     // Init application
     app_init();
-
-	
-	//uart_dbg_init();
-
-	cli_init();
-
-	static uint8_t u8_buff[64] = {0};
-	uint32_t idx = 0;
-
 
     // Main loop
     while ( 1 )
@@ -98,8 +79,6 @@ int main(void)
             cnt_p_10ms = cnt;
 
             app_hndl_10ms();
-
-			cli_hndl();
         }
 
         // 100ms loop
@@ -108,43 +87,6 @@ int main(void)
             cnt_p_100ms = cnt;
 
             app_hndl_100ms();
-	
-
-		/*	while ( eUART_DBG_OK == uart_dbg_get( &u8_buff[idx] ))
-			{
-				
-
-
-				if ( '\r' == u8_buff[idx] )
-				{
-					
-
-					u8_buff[idx] = '\0';
-
-					uart_dbg_write("Command received: " );
-					uart_dbg_write( u8_buff );
-					uart_dbg_write( "\r" );
-
-					idx = 0;
-
-				}
-				else
-				{
-
-					idx++;
-				}
-			}*/
-
-			//uart_dbg_write( "Hello World \r" );
-
-	/*		app_uart_put('1');
-			app_uart_put('2');
-			app_uart_put('3');
-			app_uart_put('4');
-			app_uart_put('\r');
-
-			app_uart_get(NULL);
-			*/
         }
 
         // 1000ms loop
@@ -153,8 +95,6 @@ int main(void)
             cnt_p_1000ms = cnt;
 
             app_hndl_1000ms();
-
-
         }
     }
 }

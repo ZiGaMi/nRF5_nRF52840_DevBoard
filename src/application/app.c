@@ -20,13 +20,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "app.h"
 #include "project_config.h"
-
-
 #include "pin_mapper.h"
+
 
 #include "gpio.h"
 
+// HMI
 #include "button/src/button.h"
+
+// Middleware
+#include "middleware/cli/cli/src/cli.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +67,12 @@ void app_init(void)
     // Init periphery
     gpio_init();
 
+    // Init Cli
+    if ( eCLI_OK != cli_init())
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
     // Init buttons
     if ( eBUTTON_OK != button_init())
     {
@@ -89,6 +98,11 @@ void app_hndl_10ms(void)
     // Handle HMI
     button_hndl();
 
+	// Handle CLI
+	cli_hndl();
+
+
+	// Debugging
     gpio_toggle( eGPIO_LED_1 );
 
 }
