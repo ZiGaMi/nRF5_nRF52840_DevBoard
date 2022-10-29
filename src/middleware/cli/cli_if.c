@@ -31,6 +31,7 @@
 
 #include "drivers/peripheral/uart/uart_dbg.h"
 
+#include "nrf_nvic.h"
 
 
 // USER CODE END...
@@ -221,8 +222,7 @@ cli_status_t cli_if_device_reset(void)
 	// USER CODE BEGIN...
 
 	// Reset device
-	// TODO: 
-	//HAL_NVIC_SystemReset();
+	NVIC_SystemReset();
 
 
 	// USER CODE END...
