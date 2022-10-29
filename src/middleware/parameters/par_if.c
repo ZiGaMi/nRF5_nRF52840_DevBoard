@@ -1,0 +1,163 @@
+// Copyright (c) 2021 Ziga Miklosic
+// All Rights Reserved
+// This software is under MIT licence (https://opensource.org/licenses/MIT)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*@file      par_if.c
+*@brief     Interface with device parameters
+*@author    Ziga Miklosic
+*@date      24.05.2021
+*@version	V1.3.0
+*/
+////////////////////////////////////////////////////////////////////////////////
+/**
+*@addtogroup PAR_IF
+* @{ <!-- BEGIN GROUP -->
+*
+* 	Interface layer for device parameters
+*
+* 	Put code that is platform depended inside code block start with
+* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
+#include "par_if.h"
+
+// USER INCLUDES BEGIN...
+
+
+// USER INCLUDES END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////////////////////
+
+// USER DEFINITIONS BEGIN...
+
+
+// USER DEFINITIONS END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Variables
+////////////////////////////////////////////////////////////////////////////////
+
+// USER VARIABLES BEGIN...
+
+
+// USER VARIABLES END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize low level interface
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+* @return 		status - Status of initialization
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_if_init(void)
+{
+	par_status_t status = ePAR_OK;
+
+	// USER CODE BEGIN...
+
+
+
+	// USER CODE END...
+
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Acquire mutex
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+*		If not being used leave empty.
+*
+*		This function does not have an affect if "PAR_CFG_MUTEX_EN"
+* 		is set to 0.
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_if_aquire_mutex(void)
+{
+	par_status_t status = ePAR_OK;
+
+	// USER CODE BEGIN...
+
+
+	// USER CODE END...
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Release mutex
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+*		If not being used leave empty.
+*
+*		This function does not have an affect if "PAR_CFG_MUTEX_EN"
+* 		is set to 0.
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+par_status_t par_if_release_mutex(void)
+{
+	par_status_t status = ePAR_OK;
+
+	// USER CODE BEGIN...
+
+
+	// USER CODE END...
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Calculate hash
+*
+* @note	User shall provide definition of that function based on used platform!
+*
+* 		If not being used leave empty.
+*
+* 		This function does not have an affect if "PAR_CFG_TABLE_ID_CHECK_EN"
+* 		is set to 0.
+*
+* @param[in]	p_data	- Pointer to data for hash calculation
+* @param[in]	size	- Size of data in bytes
+* @return 		p_hash	- Pointer to calculated hash number
+*/
+////////////////////////////////////////////////////////////////////////////////
+void par_if_calc_hash(const uint8_t * const p_data, const uint32_t size, uint8_t * const p_hash)
+{
+	PAR_ASSERT( NULL != p_data );
+	PAR_ASSERT( NULL != p_hash );
+	PAR_ASSERT( size > 0 );
+
+	// USER CODE BEGIN...
+
+
+	// USER CODE END...
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+* @} <!-- END GROUP -->
+*/
+////////////////////////////////////////////////////////////////////////////////

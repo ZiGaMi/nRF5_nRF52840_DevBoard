@@ -123,7 +123,7 @@
  * 	@brief	Usage of device parameters.
  * 			Link to repository: https://github.com/GeneralEmbeddedCLibraries/parameters
  */
-#define CLI_CFG_PAR_USE_EN						( 0 )
+#define CLI_CFG_PAR_USE_EN						( 1 )
 
 #if ( 1 == CLI_CFG_PAR_USE_EN )
 

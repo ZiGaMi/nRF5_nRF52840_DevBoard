@@ -13,3 +13,6 @@
 [submodule "src/revision/revision"]
 	path = src/revision/revision
 	url = ../../GeneralEmbeddedCLibraries/revision.git
+[submodule "src/middleware/parameters/parameters"]
+	path = src/middleware/parameters/parameters
+	url = ../../GeneralEmbeddedCLibraries/parameters.git

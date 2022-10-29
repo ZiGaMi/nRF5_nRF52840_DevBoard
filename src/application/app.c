@@ -30,6 +30,7 @@
 
 // Middleware
 #include "middleware/cli/cli/src/cli.h"
+#include "middleware/parameters/parameters/src/par.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +85,12 @@ void app_init(void)
         button_register_callback( eBUTTON_1, &app_user_btn_pressed, &app_user_btn_released );
     }
 
+	// Init device paramters
+	if ( ePAR_OK != par_init())
+	{
+		PROJECT_CONFIG_ASSERT( 0 );
+	}
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,6 +108,19 @@ void app_hndl_10ms(void)
 	// Handle CLI
 	cli_hndl();
 
+
+	bool btn_state;
+	button_get_state( eBUTTON_1, &btn_state );
+	par_set( ePAR_BTN_1, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_2, &btn_state );
+	par_set( ePAR_BTN_2, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_3, &btn_state );
+	par_set( ePAR_BTN_3, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_4, &btn_state );
+	par_set( ePAR_BTN_4, (uint8_t*) &btn_state );
 
 	// Debugging
     gpio_toggle( eGPIO_LED_1 );
