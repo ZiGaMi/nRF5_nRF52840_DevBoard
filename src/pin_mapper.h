@@ -49,14 +49,16 @@
 // Not used...
 
 // P0.05
-// Not used..
+#define DBG_UART_RTS__PORT	0
+#define DBG_UART_RTS__PIN   5
 
 // P0.06
 #define DBG_UART_TX__PORT   0
 #define DBG_UART_TX__PIN    6
 
 // P0.07
-// Not used...
+#define DBG_UART_CTS__PORT	0
+#define DBG_UART_CTS__PIN   7
 
 // P0.08
 #define DBG_UART_RX__PORT   0
