@@ -33,8 +33,7 @@
 
 #include "project_config.h"
 
-// TODO: 
-//#include "revision/revision/src/version.h"
+#include "revision/revision/src/version.h"
 
 // USER CODE END...
 
@@ -50,14 +49,14 @@
  * 	@brief	Intro string will be transmitted at "cli_init()" function call,
  * 			if low level com driver are initialized OK.
  */
-#define CLI_CFG_INTRO_STRING_EN					( 0 )
+#define CLI_CFG_INTRO_STRING_EN					( 1 )
 
 #if ( 1 == CLI_CFG_INTRO_STRING_EN )
 
 	/**
 	 * 	Intro strings
 	 */
-	#define CLI_CFG_INTRO_PROJECT_NAME			((const char*) "Evaluation of Inter-COM" )
+	#define CLI_CFG_INTRO_PROJECT_NAME			((const char*) "nRF52840 Dev Board Base Code" )
 	#define CLI_CFG_INTRO_SW_VER				((const char*) version_get_sw_str())
 	#define CLI_CFG_INTRO_HW_VER				((const char*) version_get_hw_str())
 	#define CLI_CFG_INTRO_PROJ_INFO				((const char*) version_get_proj_info_str())

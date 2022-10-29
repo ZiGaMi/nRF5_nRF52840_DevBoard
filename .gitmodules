@@ -10,3 +10,6 @@
 [submodule "src/middleware/cli/cli"]
 	path = src/middleware/cli/cli
 	url = ../../GeneralEmbeddedCLibraries/cli.git
+[submodule "src/revision/revision"]
+	path = src/revision/revision
+	url = ../../GeneralEmbeddedCLibraries/revision.git
