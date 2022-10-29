@@ -57,8 +57,10 @@ typedef enum
 {
 	// USER CODE START...
 
-	ePAR_TEST_I16,
-	ePAR_TEST_I16_2,
+	ePAR_BTN_1	= 0,
+	ePAR_BTN_2,
+	ePAR_BTN_3,
+	ePAR_BTN_4,
 
 	// USER CODE END...
 

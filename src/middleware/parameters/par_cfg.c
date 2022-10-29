@@ -65,11 +65,13 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	// USER CODE BEGIN...
 
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	//							ID			Name					Min 					Max 					Def 					Unit				Data type				PC Access					Persistent				Description
+	//							ID			Name						Min 				Max 					Def 					Unit				Data type				PC Access					Persistent				Description
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	[ePAR_TEST_I16] 	= 	{	.id = 50, 	.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true,		.desc = "Test  I16 parameter"		},
-	[ePAR_TEST_I16_2] 	=	{	.id = 51, 	.name = "Test I16",		.min.i16 = -500,		.max.i16 = 3000,		.def.i16 = -12,			.unit = NULL,		.type = ePAR_TYPE_I16,	.access = ePAR_ACCESS_RW, 	.persistant = true,		.desc = "Test  I16 2 parameter"		},
+	[ePAR_BTN_1]		= 	{	.id = 0, 	.name = "User button 1",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 1. 0-idle | 1-pressed"		},
+	[ePAR_BTN_2]		= 	{	.id = 1, 	.name = "User button 2",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 2. 0-idle | 1-pressed"		},
+	[ePAR_BTN_3]		= 	{	.id = 2, 	.name = "User button 3",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 3. 0-idle | 1-pressed"		},
+	[ePAR_BTN_4]		= 	{	.id = 3, 	.name = "User button 4",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 4. 0-idle | 1-pressed"		},
 
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

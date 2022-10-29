@@ -109,6 +109,19 @@ void app_hndl_10ms(void)
 	cli_hndl();
 
 
+	bool btn_state;
+	button_get_state( eBUTTON_1, &btn_state );
+	par_set( ePAR_BTN_1, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_2, &btn_state );
+	par_set( ePAR_BTN_2, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_3, &btn_state );
+	par_set( ePAR_BTN_3, (uint8_t*) &btn_state );
+
+	button_get_state( eBUTTON_4, &btn_state );
+	par_set( ePAR_BTN_4, (uint8_t*) &btn_state );
+
 	// Debugging
     gpio_toggle( eGPIO_LED_1 );
 
