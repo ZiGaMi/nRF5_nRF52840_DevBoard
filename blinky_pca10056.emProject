@@ -81,10 +81,18 @@
       debug_register_definition_file="nRF5_SDK/modules/nrfx/mdk/nrf52840.svd" />
     <folder Name="drivers">
       <folder Name="peripheral">
-        <file file_name="src/drivers/peripheral/systick/systick.c" />
-        <file file_name="src/drivers/peripheral/systick/systick.h" />
-        <file file_name="src/drivers/peripheral/gpio/gpio.c" />
-        <file file_name="src/drivers/peripheral/gpio/gpio.h" />
+        <folder Name="gpio">
+          <file file_name="src/drivers/peripheral/gpio/gpio.c" />
+          <file file_name="src/drivers/peripheral/gpio/gpio.h" />
+        </folder>
+        <folder Name="systick">
+          <file file_name="src/drivers/peripheral/systick/systick.c" />
+          <file file_name="src/drivers/peripheral/systick/systick.h" />
+        </folder>
+        <folder Name="uart_dbg">
+          <file file_name="src/drivers/peripheral/uart_dbg/uart_dbg.c" />
+          <file file_name="src/drivers/peripheral/uart_dbg/uart_dbg.h" />
+        </folder>
       </folder>
       <folder Name="hmi">
         <folder Name="button">

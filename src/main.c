@@ -32,39 +32,7 @@
 #include "systick.h"
 
 
-
-#include "app_uart.h"
-#include "nrf_uart.h"
-
-/*
-#include "app_error.h"
-#include "nrf_delay.h"
-#include "nrf.h"
-#include "bsp.h"
-#if defined (UART_PRESENT)
-#include "nrf_uart.h"
-#endif
-#if defined (UARTE_PRESENT)
-#include "nrf_uarte.h"
-#endif
-*/
-
-#define MAX_TEST_DATA_BYTES     (15U)                /**< max number of test bytes to be used for tx and rx. */
-#define UART_TX_BUF_SIZE 256                         /**< UART TX buffer size. */
-#define UART_RX_BUF_SIZE 256                         /**< UART RX buffer size. */
-
-void uart_error_handle(app_uart_evt_t * p_event)
-{
-    if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR)
-    {
-        APP_ERROR_HANDLER(p_event->data.error_communication);
-    }
-    else if (p_event->evt_type == APP_UART_FIFO_ERROR)
-    {
-        APP_ERROR_HANDLER(p_event->data.error_code);
-    }
-}
-
+#include "uart_dbg/uart_dbg.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +66,7 @@ int main(void)
 	uint32_t cnt_p_1000ms  = cnt;
 
 
-	uint32_t err_code;
+
 
 
     // Init systick
@@ -107,31 +75,10 @@ int main(void)
     // Init application
     app_init();
 
+	
+	uart_dbg_init();
 
 
-    const app_uart_comm_params_t comm_params =
-      {
-          DBG_UART_RX__PIN,
-          DBG_UART_TX__PIN,
-          DBG_UART_RTS__PIN,
-          DBG_UART_CTS__PIN,
-          true,
-          false,
-#if defined (UART_PRESENT)
-          NRF_UART_BAUDRATE_115200
-#else
-          NRF_UARTE_BAUDRATE_115200
-#endif
-      };
-
-    APP_UART_FIFO_INIT(&comm_params,
-                         UART_RX_BUF_SIZE,
-                         UART_TX_BUF_SIZE,
-                         uart_error_handle,
-                         APP_IRQ_PRIORITY_LOWEST,
-                         err_code);
-
-    APP_ERROR_CHECK(err_code);
 
 
 
@@ -155,13 +102,18 @@ int main(void)
             cnt_p_100ms = cnt;
 
             app_hndl_100ms();
+	
 
+			uart_dbg_write( "Hello World \r" );
 
-			app_uart_put('1');
+	/*		app_uart_put('1');
 			app_uart_put('2');
 			app_uart_put('3');
 			app_uart_put('4');
 			app_uart_put('\r');
+
+			app_uart_get(NULL);
+			*/
         }
 
         // 1000ms loop
@@ -170,6 +122,8 @@ int main(void)
             cnt_p_1000ms = cnt;
 
             app_hndl_1000ms();
+
+
         }
     }
 }
