@@ -155,6 +155,13 @@ int main(void)
             cnt_p_100ms = cnt;
 
             app_hndl_100ms();
+
+
+			app_uart_put('1');
+			app_uart_put('2');
+			app_uart_put('3');
+			app_uart_put('4');
+			app_uart_put('\r');
         }
 
         // 1000ms loop
