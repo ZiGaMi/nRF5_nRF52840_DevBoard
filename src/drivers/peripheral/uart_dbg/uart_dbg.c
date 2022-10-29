@@ -192,7 +192,10 @@ uart_dbg_status_t uart_dbg_get(char * const p_char)
 	if	(	( true == gb_is_init ) 
 		&&	( NULL != p_char ))
 	{
-		app_uart_get( p_char );
+		if ( NRF_SUCCESS != app_uart_get( p_char ))
+		{
+			status = eUART_DBG_ERROR;
+		}
 	}
 	else
 	{

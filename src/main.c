@@ -79,7 +79,8 @@ int main(void)
 	uart_dbg_init();
 
 
-
+	static uint8_t u8_buff[64] = {0};
+	uint32_t idx = 0;
 
 
     // Main loop
@@ -104,7 +105,32 @@ int main(void)
             app_hndl_100ms();
 	
 
-			uart_dbg_write( "Hello World \r" );
+			while ( eUART_DBG_OK == uart_dbg_get( &u8_buff[idx] ))
+			{
+				
+
+
+				if ( '\r' == u8_buff[idx] )
+				{
+					
+
+					u8_buff[idx] = '\0';
+
+					uart_dbg_write("Command received: " );
+					uart_dbg_write( u8_buff );
+					uart_dbg_write( "\r" );
+
+					idx = 0;
+
+				}
+				else
+				{
+
+					idx++;
+				}
+			}
+
+			//uart_dbg_write( "Hello World \r" );
 
 	/*		app_uart_put('1');
 			app_uart_put('2');
