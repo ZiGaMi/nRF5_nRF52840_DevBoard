@@ -93,11 +93,12 @@ static cli_cfg_ch_data_t g_cli_ch[eCLI_CH_NUM_OF] =
 		// --------------------------------------------------------------------------------------------
 		//	Group start parameter						Group name
 		// --------------------------------------------------------------------------------------------
-		{ 	.par_num = ePAR_POT_VOLT, 					.name="POTENCIOMETER" 						},
-		{ 	.par_num = ePAR_PPM_SYNC_WIDTH, 			.name="PPM SETTINGS" 						},
-		{ 	.par_num = ePAR_PPM_TX_CNT, 				.name="PPM STATUS" 							},
-		{ 	.par_num = ePAR_COM_PPM_FRAME_PERIOD, 		.name="COMMUNICATION SETTINGS" 				},
-		{ 	.par_num = ePAR_SYS_STATUS, 				.name="SYSTEM STATUS" 						},
+		
+		//{ 	.par_num = ePAR_POT_VOLT, 					.name="POTENCIOMETER" 						},
+		//{ 	.par_num = ePAR_PPM_SYNC_WIDTH, 			.name="PPM SETTINGS" 						},
+		//{ 	.par_num = ePAR_PPM_TX_CNT, 				.name="PPM STATUS" 							},
+		//{ 	.par_num = ePAR_COM_PPM_FRAME_PERIOD, 		.name="COMMUNICATION SETTINGS" 				},
+		//{ 	.par_num = ePAR_SYS_STATUS, 				.name="SYSTEM STATUS" 						},
 
 		// USER CODE END
 	};
