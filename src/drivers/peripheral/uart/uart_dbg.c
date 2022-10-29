@@ -41,7 +41,7 @@
  *
  *	Unit: byte
  */
-#define UART_DBG_TX_BUF_SIZE		( 1024 )                         
+#define UART_DBG_TX_BUF_SIZE		( 1024 * 2 )                         
 
 /**
  *		Reception buffer size

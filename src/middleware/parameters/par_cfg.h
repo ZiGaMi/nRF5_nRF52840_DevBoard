@@ -30,7 +30,7 @@
 #include "project_config.h"
 
 // Debug communication port
-//#include "middleware/debug_comm_port/com_dbg.h"
+#include "middleware/cli/cli/src/cli.h"
 
 // NVM
 //#include "middleware/nvm/nvm_cfg.h"
@@ -115,7 +115,7 @@ typedef enum
  *
  * 	@note	Disable in release!
  */
-#define PAR_CFG_DEBUG_EN						( 0 )
+#define PAR_CFG_DEBUG_EN						( 1 )
 
 #ifndef DEBUG
 #undef PAR_CFG_DEBUG_EN
@@ -138,7 +138,7 @@ typedef enum
  * 	Debug communication port macros
  */
 #if ( 1 == PAR_CFG_DEBUG_EN )
-	#define PAR_DBG_PRINT( ... )				( com_dbg_print( eCOM_DBG_CH_NONE, (const char*) __VA_ARGS__ ))
+	#define PAR_DBG_PRINT( ... )				( cli_printf( __VA_ARGS__ ))
 #else
 	#define PAR_DBG_PRINT( ... )				{ ; }
 
