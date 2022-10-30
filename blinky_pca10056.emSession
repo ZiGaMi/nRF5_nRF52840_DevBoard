@@ -24,9 +24,17 @@
   <ProjectSessionItem path="blinky_pca10056"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;application"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;Configurations"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;drivers"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;drivers;peripheral"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;drivers;peripheral;uart"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;middleware"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;middleware;cli"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;middleware;cli;cli"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;middleware;parameters"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;middleware;parameters;parameters"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;None"/>
+  <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;nRF_Libraries"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;revision"/>
   <ProjectSessionItem path="blinky_pca10056;blinky_pca10056;Segger Startup Files"/>
  </Project>
@@ -63,30 +71,38 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="27" useTextEdit="1" path="src/main.c" left="0" selected="1" top="34" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/project_config.h" path="src/project_config.c" left="0" top="26" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="39" y="57" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/project_config.c" path="src/project_config.h" left="0" top="8" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="62" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/main.c" path="src/application/app.c" left="0" top="49" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="67" useTextEdit="1" path="src/main.c" left="0" selected="1" top="45" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/project_config.h" path="src/project_config.c" left="0" top="17" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="39" y="57" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/project_config.c" path="src/project_config.h" left="0" top="10" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="43" y="115" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/main.c" path="src/application/app.c" left="0" top="85" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="19" y="23" useTextEdit="1" path="src/application/app.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="29" y="55" useTextEdit="1" path="src/pin_mapper.h" left="0" top="30" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="57" useTextEdit="1" path="src/pin_mapper.h" left="0" top="30" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="32" y="40" useTextEdit="1" path="nRF5_SDK/components/libraries/uart/app_uart.c" left="0" top="15" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="39" y="204" useTextEdit="1" path="nRF5_SDK/components/libraries/uart/app_uart_fifo.c" left="0" top="182" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="44" useTextEdit="1" path="nRF5_SDK/integration/nrfx/legacy/nrf_drv_uart.h" left="0" top="22" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="44" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/nRF5_SDK/integration/nrfx/legacy/nrf_drv_uart.h" path="nRF5_SDK/modules/nrfx/nrfx.h" left="0" top="9" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="44" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/nRF5_SDK/integration/nrfx/legacy/nrf_drv_uart.h" path="nRF5_SDK/modules/nrfx/nrfx.h" left="0" top="3" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/nRF5_SDK/modules/nrfx/nrfx.h" path="nRF5_SDK/modules/nrfx/drivers/nrfx_common.h" left="0" top="27" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="7" y="4376" useTextEdit="1" path="src/config/sdk_config.h" left="0" top="4355" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="nRF5_SDK/modules/nrfx/mdk/ses_startup_nrf_common.s" left="0" top="119" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="29" y="123" useTextEdit="1" path="nRF5_SDK/modules/nrfx/mdk/ses_startup_nrf52840.s" left="0" top="111" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="71" useTextEdit="1" path="nRF5_SDK/modules/nrfx/mdk/ses_startup_nrf52840.s" left="0" top="46" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="62" y="499" useTextEdit="1" path="nRF5_SDK/modules/nrfx/drivers/src/nrfx_uart.c" left="0" top="471" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/drivers/peripheral/uart_dbg/uart_dbg.c" path="nRF5_SDK/components/libraries/uart/app_uart.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="87" y="106" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/drivers/peripheral/uart_dbg/uart_dbg.c" path="nRF5_SDK/modules/nrfx/hal/nrf_uart.h" left="0" top="75" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="21" y="69" useTextEdit="1" path="nRF5_SDK/components/libraries/fifo/app_fifo.c" left="0" top="42" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="src/middleware/cli/cli_cfg.c" left="0" top="3" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="43" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/cli/cli/src/cli.c" path="src/middleware/cli/cli_cfg.h" left="0" top="21" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="1723" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/cli/cli_cfg.h" path="src/middleware/cli/cli/src/cli.c" left="0" top="1704" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="100" useTextEdit="1" path="src/middleware/cli/cli_cfg.c" left="0" top="69" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="35" y="125" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/cli/cli/src/cli.c" path="src/middleware/cli/cli_cfg.h" left="0" top="51" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="43" y="1236" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/cli/cli_cfg.h" path="src/middleware/cli/cli/src/cli.c" left="0" top="1203" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="31" y="25" useTextEdit="1" path="src/revision/revision/src/version.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="25" y="30" useTextEdit="1" path="src/revision/version_cfg.h" left="0" top="13" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="225" useTextEdit="1" path="src/middleware/cli/cli_if.c" left="0" top="197" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="225" useTextEdit="1" path="src/middleware/cli/cli_if.c" left="0" top="193" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="228" y="73" useTextEdit="1" path="src/middleware/parameters/par_cfg.c" left="169" top="48" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="11" y="59" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/parameters/par_cfg.c" path="src/middleware/parameters/par_cfg.h" left="0" top="30" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="154" useTextEdit="1" path="src/middleware/parameters/par_if.c" left="0" top="117" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="112" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/parameters/par_cfg.c" path="src/middleware/parameters/parameters/src/par.h" left="0" top="99" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="40" y="43" useTextEdit="1" path="src/drivers/peripheral/uart/uart_dbg.c" left="0" top="27" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="672" useTextEdit="1" openedFrom="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/cli/cli/src/cli.c" path="nRF5_SDK/components/toolchain/cmsis/include/cmsis_gcc.h" left="0" top="648" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="99" useTextEdit="1" path="nRF5_SDK/components/libraries/util/app_error_weak.c" left="0" top="62" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="501" useTextEdit="1" path="src/middleware/parameters/parameters/src/par.c" left="0" top="457" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="blinky_pca10056" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/revision" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <EMStudioWindow activeProject="blinky_pca10056" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/ZigaMiklosic/Documents/SEGGER Embedded Studio for ARM Projects/Nordic_Blink/src/middleware/parameters/parameters/src" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

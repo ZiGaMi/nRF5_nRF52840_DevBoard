@@ -173,6 +173,7 @@ typedef enum
 
 	// USER_CODE_BEGIN
 
+	eCLI_CH_APP,
 
 	// USER_CODE_END
 

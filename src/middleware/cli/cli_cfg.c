@@ -68,6 +68,7 @@ static cli_cfg_ch_data_t g_cli_ch[eCLI_CH_NUM_OF] =
 	// --------------------------------------------------------------------------
 	[eCLI_CH_WAR] 		= {	.name = "WARNING", 			.en = true 				},
 	[eCLI_CH_ERR] 		= {	.name = "ERROR", 			.en = true 				},
+	[eCLI_CH_APP] 		= {	.name = "APP",				.en = true 				},
 
 	// USER_CODE_BEGIN
 
