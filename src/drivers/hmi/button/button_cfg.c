@@ -52,10 +52,10 @@ static const button_cfg_t g_button_cfg[ eBUTTON_NUM_OF ] =
 	// -------------------------------------------------------------------------------------------------------------------------
 	//	Gpio pin			Button polarity				LPF enable	Default LPF fc
 	// -------------------------------------------------------------------------------------------------------------------------
-	{ 	.gpio_pin = eGPIO_BTN_1,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = false,    .lpf_fc = 1.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_2,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = false,    .lpf_fc = 1.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_3,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = false,    .lpf_fc = 1.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_4,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = false,    .lpf_fc = 1.0f          },
+	{ 	.gpio_pin = eGPIO_BTN_1,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
+	{ 	.gpio_pin = eGPIO_BTN_2,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
+	{ 	.gpio_pin = eGPIO_BTN_3,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
+	{ 	.gpio_pin = eGPIO_BTN_4,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
 
 
 	// USER CODE END...
