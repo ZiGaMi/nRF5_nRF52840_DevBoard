@@ -5919,10 +5919,15 @@
 // <e> UART1_ENABLED - Enable UART1 instance
 //==========================================================
 #ifndef UART1_ENABLED
-#define UART1_ENABLED 0
+#define UART1_ENABLED 1
 #endif
-// </e>
+// <q> UART1_CONFIG_USE_EASY_DMA  - Default setting for using EasyDMA
 
+#ifndef UART1_CONFIG_USE_EASY_DMA
+#define UART1_CONFIG_USE_EASY_DMA 1
+#endif
+
+// </e>
 // </e>
 
 // <e> USBD_ENABLED - nrf_drv_usbd - Software Component
