@@ -31,9 +31,6 @@
 // Periphery
 #include "systick.h"
 
-#include "nrf_gpio.h"
-#include "nrf_drv_uart.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,39 +46,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-
-nrf_drv_uart_t uart_driver_instance = NRF_DRV_UART_INSTANCE( 1 );
-
-static uint8_t rx_buffer;
-static uint8_t gu8_rx_buf[256];
-static uint32_t gu32_cnt = 0;
-
-
-static void uart_event_handler(nrf_drv_uart_event_t * p_event, void* p_context)
-{
-    if (p_event->type == NRF_DRV_UART_EVT_RX_DONE)
-    {
-		if( p_event->data.rxtx.bytes > 0 )
-		{
-
-			//nrf_drv_uart_rx( &uart_driver_instance, &gu8_rx_buf[ gu32_cnt ], 1 );
-			
-			gu8_rx_buf[ gu32_cnt ] = p_event->data.rxtx.p_data[0];
-
-			gu32_cnt++;
-		}
-
-		(void) nrf_drv_uart_rx( &uart_driver_instance, &rx_buffer, 1 );
-    }
-    else if (p_event->type == NRF_DRV_UART_EVT_ERROR)
-    {
-
-    }
-    else if (p_event->type == NRF_DRV_UART_EVT_TX_DONE)
-    {
-
-    }
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,31 +68,6 @@ int main(void)
     // Init application
     app_init();
 
-	uint32_t ret_code;
-	
-	
-	//nrf_drv_uart_config_t config = NRF_DRV_UART_DEFAULT_CONFIG;
-	nrf_drv_uart_config_t config = 
-	{
-		.pseltxd			=  NRF_GPIO_PIN_MAP( 1, 2 ),          
-		.pselrxd			=  NRF_GPIO_PIN_MAP( 1, 1 ),        
-		.pselcts			= NRF_UART_PSEL_DISCONNECTED,
-		.pselrts			= NRF_UART_PSEL_DISCONNECTED,
-		.p_context			= NULL,
-		.hwfc				= NRF_UART_HWFC_DISABLED,    
-		.parity				= NRF_UART_PARITY_EXCLUDED,
-		.baudrate			= NRF_UARTE_BAUDRATE_115200,
-		.interrupt_priority	= 6,
-		.use_easy_dma		= true,
-	};
-	
-
-	ret_code = nrf_drv_uart_init( &uart_driver_instance, &config, uart_event_handler );
-
-	//static uint8_t rx_buffer[1];
-	static uint8_t tx_buffer[2] = { 'a', 'b' };
-	nrf_drv_uart_rx( &uart_driver_instance, &rx_buffer, 1 );
-
 
     // Main loop
     while ( 1 )
@@ -150,8 +89,6 @@ int main(void)
             cnt_p_100ms = cnt;
 
             app_hndl_100ms();
-
-			nrf_drv_uart_tx( &uart_driver_instance, &tx_buffer, 2 );
         }
 
         // 1000ms loop

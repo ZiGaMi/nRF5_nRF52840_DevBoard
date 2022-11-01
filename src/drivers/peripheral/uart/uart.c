@@ -26,9 +26,11 @@
 #include "uart.h"
 #include "pin_mapper.h"
 #include "project_config.h"
+#include "middleware/ring_buffer/src/ring_buffer.h"
 
 #include "nrf_gpio.h"
 #include "nrf_drv_uart.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +96,43 @@ static bool gb_is_init = false;
   static uint8_t gu8_uart0_rx_buf = 0;
   static uint8_t gu8_uart1_rx_buf = 0;
 
+  /**
+ * 	UART Rx/Tx buffer space
+ */
+static uint8_t gu8_uart0_tx_buffer[UART_0_TX_BUF_SIZE] = {0};
+static uint8_t gu8_uart0_rx_buffer[UART_0_RX_BUF_SIZE] = {0};
+static uint8_t gu8_uart1_tx_buffer[UART_1_TX_BUF_SIZE] = {0};
+static uint8_t gu8_uart1_rx_buffer[UART_1_RX_BUF_SIZE] = {0};
+
+/**
+ * 	UART Rx buffer
+ */
+static p_ring_buffer_t 		g_rx_buffer0 = NULL;
+const ring_buffer_attr_t 	g_rx_buffer0_attr  = { 	.name 		= "Uart0 Rx Buf",
+													.item_size 	= 1,
+													.override 	= false,
+													.p_mem 		= &gu8_uart0_rx_buffer };
+
+static p_ring_buffer_t 		g_rx_buffer1 = NULL;
+const ring_buffer_attr_t 	g_rx_buffer1_attr  = { 	.name 		= "Uart1 Rx Buf",
+													.item_size 	= 1,
+													.override 	= false,
+													.p_mem 		= &gu8_uart1_rx_buffer };
+/**
+ * 	UART Tx buffer
+ */
+static p_ring_buffer_t 		g_tx_buffer0 = NULL;
+const ring_buffer_attr_t 	g_tx_buffer0_attr  = { 	.name 		= "Uart0 Tx Buf",
+													.item_size 	= 1,
+													.override 	= false,
+													.p_mem 		= &gu8_uart0_tx_buffer };
+
+static p_ring_buffer_t 		g_tx_buffer1 = NULL;
+const ring_buffer_attr_t 	g_tx_buffer1_attr  = { 	.name 		= "Uart1 Tx Buf",
+													.item_size 	= 1,
+													.override 	= false,
+													.p_mem 		= &gu8_uart1_tx_buffer };
+
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,6 +188,43 @@ static uart_status_t uart_1_init(void)
 	
 	// Init
 	if ( NRF_SUCCESS != nrf_drv_uart_init( &gh_uart1_handler, &config, uart_1_event_handler ))
+	{
+		status = eUART_ERROR;
+	}
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize Tx/Rx buffer
+*
+* @return 		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static uart_status_t uart_init_buffers(void)
+{
+	uart_status_t status = eUART_OK;
+
+	// Init Tx buffer
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer0, UART_0_TX_BUF_SIZE, &g_tx_buffer0_attr ))
+	{
+		status = eUART_ERROR;
+	}
+
+
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer1, UART_1_TX_BUF_SIZE, &g_tx_buffer1_attr ))
+	{
+		status = eUART_ERROR;
+	}
+
+	// Init Rx buffer
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer0, UART_0_RX_BUF_SIZE, &g_rx_buffer0_attr ))
+	{
+		status = eUART_ERROR;
+	}
+
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer1, UART_1_RX_BUF_SIZE, &g_rx_buffer1_attr ))
 	{
 		status = eUART_ERROR;
 	}
