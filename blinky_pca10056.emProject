@@ -100,6 +100,8 @@
         <folder Name="uart">
           <file file_name="src/drivers/peripheral/uart/uart_dbg.c" />
           <file file_name="src/drivers/peripheral/uart/uart_dbg.h" />
+          <file file_name="src/drivers/peripheral/uart/uart.c" />
+          <file file_name="src/drivers/peripheral/uart/uart.h" />
         </folder>
       </folder>
       <folder Name="hmi">
