@@ -31,27 +31,18 @@
 #include "nrf_gpio.h"
 #include "nrf_drv_uart.h"
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- *		UARTE0 buffer size
- *
- *	Unit: byte
- */
-#define UART_0_TX_BUF_SIZE			( 1024 * 2 )                         
-#define UART_0_RX_BUF_SIZE			( 512 )   
 
 /**
  *		UARTE1 buffer size
  *
  *	Unit: byte
  */
-#define UART_1_TX_BUF_SIZE			( 1024 * 2 )                         
-#define UART_1_RX_BUF_SIZE			( 1024 )  
+#define UART_1_TX_BUF_SIZE			( 512)                         
+#define UART_1_RX_BUF_SIZE			( 512 )  
 
 
 /**
@@ -59,8 +50,7 @@
  *
  * @note	Select one of the "nrf_uart_baudrate_t" enumeration options inside
  *			"nrf_uart.h" file.
- */
-#define UART_0_BAUDRATE				( NRF_UARTE_BAUDRATE_115200 )   
+ */  
 #define UART_1_BAUDRATE				( NRF_UARTE_BAUDRATE_115200 )   
 
 /**
@@ -87,32 +77,22 @@ static bool gb_is_init = false;
 /**
  *	UARTE Handlers
  */	
- static nrf_drv_uart_t gh_uart0_handler = NRF_DRV_UART_INSTANCE( 0 );
  static nrf_drv_uart_t gh_uart1_handler = NRF_DRV_UART_INSTANCE( 1 );
 
  /**
   *		Dummy reception buffers
   */
-  static uint8_t gu8_uart0_rx_buf = 0;
   static uint8_t gu8_uart1_rx_buf = 0;
 
   /**
  * 	UART Rx/Tx buffer space
  */
-static uint8_t gu8_uart0_tx_buffer[UART_0_TX_BUF_SIZE] = {0};
-static uint8_t gu8_uart0_rx_buffer[UART_0_RX_BUF_SIZE] = {0};
 static uint8_t gu8_uart1_tx_buffer[UART_1_TX_BUF_SIZE] = {0};
 static uint8_t gu8_uart1_rx_buffer[UART_1_RX_BUF_SIZE] = {0};
 
 /**
  * 	UART Rx buffer
  */
-static p_ring_buffer_t 		g_rx_buffer0 = NULL;
-const ring_buffer_attr_t 	g_rx_buffer0_attr  = { 	.name 		= "Uart0 Rx Buf",
-													.item_size 	= 1,
-													.override 	= false,
-													.p_mem 		= &gu8_uart0_rx_buffer };
-
 static p_ring_buffer_t 		g_rx_buffer1 = NULL;
 const ring_buffer_attr_t 	g_rx_buffer1_attr  = { 	.name 		= "Uart1 Rx Buf",
 													.item_size 	= 1,
@@ -121,12 +101,6 @@ const ring_buffer_attr_t 	g_rx_buffer1_attr  = { 	.name 		= "Uart1 Rx Buf",
 /**
  * 	UART Tx buffer
  */
-static p_ring_buffer_t 		g_tx_buffer0 = NULL;
-const ring_buffer_attr_t 	g_tx_buffer0_attr  = { 	.name 		= "Uart0 Tx Buf",
-													.item_size 	= 1,
-													.override 	= false,
-													.p_mem 		= &gu8_uart0_tx_buffer };
-
 static p_ring_buffer_t 		g_tx_buffer1 = NULL;
 const ring_buffer_attr_t 	g_tx_buffer1_attr  = { 	.name 		= "Uart1 Tx Buf",
 													.item_size 	= 1,
@@ -144,7 +118,15 @@ static uart_status_t uart_1_init_buffers(void);
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		UART1 Event handler from interrupt
+*
+* @param[in]	p_event		- Event details
+* @param[in]	p_context	- Context of event
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context)
 {
 	uint8_t u8_data = 0;
@@ -168,6 +150,7 @@ static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context
 			}
 		}
 
+		// Dummy read
 		(void) nrf_drv_uart_rx( &gh_uart1_handler, &gu8_uart1_rx_buf, 1 );
     }
 
@@ -181,6 +164,7 @@ static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context
 		}
     }
 
+	// TODO: Check out what kind of error are being process here...
 	else if (p_event->type == NRF_DRV_UART_EVT_ERROR)
     {
 
@@ -194,7 +178,7 @@ static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Initialize Tx/Rx buffer
+*		Initialize UART1 Tx/Rx buffer
 *
 * @return 		status	- Status of operation
 */
@@ -220,7 +204,7 @@ static uart_status_t uart_1_init_buffers(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Initialization of uart
+*		Initialization of UART1
 *
 * @return 		status - Status of operation
 */
@@ -255,6 +239,7 @@ uart_status_t uart_1_init(void)
 			status = eUART_ERROR;
 		}
 
+		// Dummy read
 		(void) nrf_drv_uart_rx( &gh_uart1_handler, &gu8_uart1_rx_buf, 1 );
 
 		if ( eUART_OK == status )
@@ -268,7 +253,9 @@ uart_status_t uart_1_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		UART transmit
+*		UART1 transmit
+*	
+* @note This function is non-blocking
 *
 * @param[in] 	pc_string	- String to be sended over UART
 * @return 		status		- Status of operation
@@ -318,49 +305,7 @@ uart_status_t uart_1_write(const char* str)
 			{
 				nrf_drv_uart_tx( &gh_uart1_handler, &u8_data, 1 );
 			}
-        }
-
-
-
-		// Get lenght of string
-/*		const uint32_t str_len = strlen( str );
-
-		// Put all to fifo
-		for ( uint32_t ch = 0; ch < str_len; ch++ )
-		{
-			// Put char to tx buffer
-			if ( eRING_BUFFER_OK != ring_buffer_add( g_tx_buffer1, (const char*) str ))
-			{
-				// TODO: handle error if not all data added
-				break;
-			}
-
-			// Move thru string
-			str++;
-		}
-		
-		// Start trasmission by sending first char from fifo
-		if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer1, &u8_data ))
-		{
-			nrf_drv_uart_tx( &gh_uart1_handler, &u8_data, 1 );
-		}
-
-
-		// Wait until transmission is complete
-		//while (u32_curr_timeout < TX_TIMEOUT)
-
-		uint32_t taken = 0;
-		while ( 1 )
-		{
-			ring_buffer_get_taken( g_tx_buffer1, &taken );
-
-			if ( 0 == taken )
-			{
-				break;
-			}
-		}
-		*/
-		
+        }	
 	}
 	else
 	{
@@ -372,7 +317,9 @@ uart_status_t uart_1_write(const char* str)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Receive character from reception buffer
+*		Receive UART1 character from reception buffer
+*
+* @note This function is non-blocking
 *
 * @param[in] 	p_char	- Pointer to received character
 * @return 		status	- Status of operation
