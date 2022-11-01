@@ -42,7 +42,7 @@
  *
  *	Unit: byte
  */
-#define UART_0_TX_BUF_SIZE			( 1024 )                         
+#define UART_0_TX_BUF_SIZE			( 1024 * 2 )                         
 #define UART_0_RX_BUF_SIZE			( 512 )   
 
 /**
@@ -50,7 +50,7 @@
  *
  *	Unit: byte
  */
-#define UART_1_TX_BUF_SIZE			( 1024 )                         
+#define UART_1_TX_BUF_SIZE			( 1024 * 2 )                         
 #define UART_1_RX_BUF_SIZE			( 1024 )  
 
 
@@ -136,7 +136,7 @@ const ring_buffer_attr_t 	g_tx_buffer1_attr  = { 	.name 		= "Uart1 Tx Buf",
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static uart_status_t uart_1_init(void);
+static uart_status_t uart_1_init_buffers(void);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,52 +147,49 @@ static uart_status_t uart_1_init(void);
 
 static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context)
 {
-    if (p_event->type == NRF_DRV_UART_EVT_RX_DONE)
+	uint8_t u8_data = 0;
+
+	// Reception buffer not empty
+    if ( p_event->type == NRF_DRV_UART_EVT_RX_DONE )
     {
 		if( p_event->data.rxtx.bytes > 0 )
 		{
-			// TODO: REceive here
+			// Get received char
+			u8_data = p_event->data.rxtx.p_data[0];
+
+			// Store rx char to buffer
+			if ( eRING_BUFFER_OK == ring_buffer_add( g_rx_buffer1, &u8_data ))
+			{
+				// No actions...
+			}
+			else
+			{
+				// TODO: handle error
+			}
 		}
 
 		(void) nrf_drv_uart_rx( &gh_uart1_handler, &gu8_uart1_rx_buf, 1 );
     }
-    else if (p_event->type == NRF_DRV_UART_EVT_ERROR)
+
+	// Transmission buffer empty
+    else if ( p_event->type == NRF_DRV_UART_EVT_TX_DONE )
+    {
+		// Send next char from tx buffer
+		if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer1, &u8_data ))
+		{
+			nrf_drv_uart_tx( &gh_uart1_handler, &u8_data, 1 );
+		}
+    }
+
+	else if (p_event->type == NRF_DRV_UART_EVT_ERROR)
     {
 
     }
-    else if (p_event->type == NRF_DRV_UART_EVT_TX_DONE)
-    {
-		// TODO: Transmit here
-    }
-}
 
-
-static uart_status_t uart_1_init(void)
-{
-	uart_status_t status = eUART_OK;
-
-	// Setup configuration
-	nrf_drv_uart_config_t config = 
+	else
 	{
-		.pseltxd			=  NRF_GPIO_PIN_MAP( UART_1_TX__PORT, UART_1_TX__PIN ),          
-		.pselrxd			=  NRF_GPIO_PIN_MAP( UART_1_RX__PORT, UART_1_RX__PIN ),        
-		.pselcts			= NRF_UART_PSEL_DISCONNECTED,
-		.pselrts			= NRF_UART_PSEL_DISCONNECTED,
-		.p_context			= NULL,
-		.hwfc				= NRF_UART_HWFC_DISABLED,    
-		.parity				= NRF_UART_PARITY_EXCLUDED,
-		.baudrate			= UART_1_BAUDRATE,
-		.interrupt_priority	= 6,
-		.use_easy_dma		= true,
-	};
-	
-	// Init
-	if ( NRF_SUCCESS != nrf_drv_uart_init( &gh_uart1_handler, &config, uart_1_event_handler ))
-	{
-		status = eUART_ERROR;
+		// No actions...
 	}
-
-	return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,28 +199,17 @@ static uart_status_t uart_1_init(void)
 * @return 		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-static uart_status_t uart_init_buffers(void)
+static uart_status_t uart_1_init_buffers(void)
 {
 	uart_status_t status = eUART_OK;
 
 	// Init Tx buffer
-	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer0, UART_0_TX_BUF_SIZE, &g_tx_buffer0_attr ))
-	{
-		status = eUART_ERROR;
-	}
-
-
 	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer1, UART_1_TX_BUF_SIZE, &g_tx_buffer1_attr ))
 	{
 		status = eUART_ERROR;
 	}
 
 	// Init Rx buffer
-	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer0, UART_0_RX_BUF_SIZE, &g_rx_buffer0_attr ))
-	{
-		status = eUART_ERROR;
-	}
-
 	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer1, UART_1_RX_BUF_SIZE, &g_rx_buffer1_attr ))
 	{
 		status = eUART_ERROR;
@@ -239,19 +225,41 @@ static uart_status_t uart_init_buffers(void)
 * @return 		status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-uart_status_t uart_init	(void)
+uart_status_t uart_1_init(void)
 {
 	uart_status_t status = eUART_OK;
 	
 	if ( false == gb_is_init )
 	{
-		// Init both uarts
-		//status |= uart_0_init();
-		status |= uart_1_init();
+		// Init buffers
+		status |= uart_1_init_buffers();
+
+		// Setup configuration
+		nrf_drv_uart_config_t config = 
+		{
+			.pseltxd			= NRF_GPIO_PIN_MAP( UART_1_TX__PORT, UART_1_TX__PIN ),          
+			.pselrxd			= NRF_GPIO_PIN_MAP( UART_1_RX__PORT, UART_1_RX__PIN ),        
+			.pselcts			= NRF_UART_PSEL_DISCONNECTED,
+			.pselrts			= NRF_UART_PSEL_DISCONNECTED,
+			.p_context			= NULL,
+			.hwfc				= NRF_UART_HWFC_DISABLED,    
+			.parity				= NRF_UART_PARITY_EXCLUDED,
+			.baudrate			= UART_1_BAUDRATE,
+			.interrupt_priority	= 6,
+			.use_easy_dma		= true,
+		};
+	
+		// Init
+		if ( NRF_SUCCESS != nrf_drv_uart_init( &gh_uart1_handler, &config, uart_1_event_handler ))
+		{
+			status = eUART_ERROR;
+		}
+
+		(void) nrf_drv_uart_rx( &gh_uart1_handler, &gu8_uart1_rx_buf, 1 );
 
 		if ( eUART_OK == status )
 		{
-			gb_is_init = false;
+			gb_is_init = true;
 		}
 	}
 
@@ -262,22 +270,97 @@ uart_status_t uart_init	(void)
 /**
 *		UART transmit
 *
-* @param[in]	inst		- UART instance
 * @param[in] 	pc_string	- String to be sended over UART
 * @return 		status		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-uart_status_t uart_write(const uart_inst_t inst, const char* str)
+uart_status_t uart_1_write(const char* str)
 {
 	uart_status_t status = eUART_OK;
+	uint8_t u8_data = 0;
 
+	UART_ASSERT( true == gb_is_init );
 	UART_ASSERT( NULL != str );
-	UART_ASSERT( inst < eUART_NUM_OF );
 
-	if	(	( NULL != str )
-		&&	( inst < eUART_NUM_OF ))
+	if	(	( true == gb_is_init ) 
+		&&	( NULL != str ))
 	{
-	
+		// Get lenght of string
+		const uint32_t str_len = strlen( str );
+
+		// Put all to fifo
+		for ( uint32_t ch = 0; ch < str_len; ch++ )
+		{
+			// Put char to tx buffer
+			if ( eRING_BUFFER_OK != ring_buffer_add( g_tx_buffer1, (const char*) str ))
+			{
+				// TODO: handle error if not all data added
+				break;
+			}
+
+			// Move thru string
+			str++;
+		}
+
+        // The new byte has been added to FIFO. It will be picked up from there
+        // (in 'uart_event_handler') when all preceding bytes are transmitted.
+        // But if UART is not transmitting anything at the moment, we must start
+        // a new transmission here.
+        if ( false == nrf_drv_uart_tx_in_progress( &gh_uart1_handler ))
+        {
+            // This operation should be almost always successful, since we've
+            // just added a byte to FIFO, but if some bigger delay occurred
+            // (some heavy interrupt handler routine has been executed) since
+            // that time, FIFO might be empty already.
+            
+			// Start trasmission by sending first char from fifo
+			if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer1, &u8_data ))
+			{
+				nrf_drv_uart_tx( &gh_uart1_handler, &u8_data, 1 );
+			}
+        }
+
+
+
+		// Get lenght of string
+/*		const uint32_t str_len = strlen( str );
+
+		// Put all to fifo
+		for ( uint32_t ch = 0; ch < str_len; ch++ )
+		{
+			// Put char to tx buffer
+			if ( eRING_BUFFER_OK != ring_buffer_add( g_tx_buffer1, (const char*) str ))
+			{
+				// TODO: handle error if not all data added
+				break;
+			}
+
+			// Move thru string
+			str++;
+		}
+		
+		// Start trasmission by sending first char from fifo
+		if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer1, &u8_data ))
+		{
+			nrf_drv_uart_tx( &gh_uart1_handler, &u8_data, 1 );
+		}
+
+
+		// Wait until transmission is complete
+		//while (u32_curr_timeout < TX_TIMEOUT)
+
+		uint32_t taken = 0;
+		while ( 1 )
+		{
+			ring_buffer_get_taken( g_tx_buffer1, &taken );
+
+			if ( 0 == taken )
+			{
+				break;
+			}
+		}
+		*/
+		
 	}
 	else
 	{
@@ -291,24 +374,25 @@ uart_status_t uart_write(const uart_inst_t inst, const char* str)
 /**
 *		Receive character from reception buffer
 *
-* @param[in]	inst	- UART instance
 * @param[in] 	p_char	- Pointer to received character
 * @return 		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-uart_status_t uart_get(const uart_inst_t inst, char * const p_char)
+uart_status_t uart_1_get(char * const p_char)
 {
 	uart_status_t status = eUART_OK;
 
+	UART_ASSERT( true == gb_is_init );
 	UART_ASSERT( NULL != p_char );
-	UART_ASSERT( inst < eUART_NUM_OF );
 
 	if	(	( true == gb_is_init ) 
-		&&	( NULL != p_char )
-		&&	( inst < eUART_NUM_OF  ))
+		&&	( NULL != p_char ))
 	{
-
-		// TODO: ..
+		// Get from buffer
+		if ( eRING_BUFFER_OK != ring_buffer_get( g_rx_buffer1, p_char ))
+		{
+			status = eUART_ERROR;
+		}
 	}
 	else
 	{
@@ -317,7 +401,6 @@ uart_status_t uart_get(const uart_inst_t inst, char * const p_char)
 
 	return status;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

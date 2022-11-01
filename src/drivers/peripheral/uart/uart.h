@@ -41,23 +41,13 @@ typedef enum
     eUART_ERROR,	/**<General error code */
 } uart_status_t;
 
-/**
- *	UART Instance
- */
- typedef enum
- {
-	eUART_0 = 0,	/**<UARTE0 Instance */
-	eUART_1,		/**<UARTE1 Instance */
-
-	eUART_NUM_OF,
-} uart_inst_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-uart_status_t uart_dbg_init		(void);
-uart_status_t uart_dbg_write	(const uart_inst_t inst, const char* pc_string);
-uart_status_t uart_dbg_get		(const uart_inst_t inst, char * const p_char);
+uart_status_t uart_1_init	(void);
+uart_status_t uart_1_write	(const char* pc_string);
+uart_status_t uart_1_get	(char * const p_char);
 
 
 #endif // __UART_DBG_H
