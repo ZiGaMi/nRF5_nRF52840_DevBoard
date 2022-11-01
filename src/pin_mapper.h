@@ -128,7 +128,16 @@
  * 	PORT 1
  ******************************************************************************/
 
+// P1.00
+// Not used...
 
+// P1.01
+#define UART_1_RX__PORT   1
+#define UART_1_RX__PIN    1
+
+// P1.02
+#define UART_1_TX__PORT   1
+#define UART_1_TX__PIN    2
 
 
 #endif // __PIN_MAPPER_H

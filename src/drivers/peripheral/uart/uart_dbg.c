@@ -86,6 +86,7 @@ static bool gb_is_init = false;
 
 
 
+// TODO: 
 void uart_error_handle(app_uart_evt_t * p_event)
 {
     if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR)

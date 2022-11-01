@@ -32,6 +32,7 @@
 #include "middleware/cli/cli/src/cli.h"
 #include "middleware/parameters/parameters/src/par.h"
 
+#include "uart.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -100,6 +101,11 @@ void app_init(void)
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
+
+	if ( eUART_OK != uart_1_init())
+	{
+		PROJECT_CONFIG_ASSERT( 0 );
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,6 +140,8 @@ void app_hndl_10ms(void)
 void app_hndl_100ms(void)
 {
     gpio_toggle( eGPIO_LED_2 );
+
+	uart_1_write( "Hello World" );
 
 
 }
