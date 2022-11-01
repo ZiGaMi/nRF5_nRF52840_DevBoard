@@ -50,12 +50,28 @@
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
+nrf_drv_uart_t uart_driver_instance = NRF_DRV_UART_INSTANCE( 1 );
+
+static uint8_t rx_buffer;
+static uint8_t gu8_rx_buf[256];
+static uint32_t gu32_cnt = 0;
+
 
 static void uart_event_handler(nrf_drv_uart_event_t * p_event, void* p_context)
 {
     if (p_event->type == NRF_DRV_UART_EVT_RX_DONE)
     {
+		if( p_event->data.rxtx.bytes > 0 )
+		{
 
+			//nrf_drv_uart_rx( &uart_driver_instance, &gu8_rx_buf[ gu32_cnt ], 1 );
+			
+			gu8_rx_buf[ gu32_cnt ] = p_event->data.rxtx.p_data[0];
+
+			gu32_cnt++;
+		}
+
+		(void) nrf_drv_uart_rx( &uart_driver_instance, &rx_buffer, 1 );
     }
     else if (p_event->type == NRF_DRV_UART_EVT_ERROR)
     {
@@ -89,7 +105,7 @@ int main(void)
     app_init();
 
 	uint32_t ret_code;
-	nrf_drv_uart_t uart_driver_instance = NRF_DRV_UART_INSTANCE( 1 );
+	
 	
 	//nrf_drv_uart_config_t config = NRF_DRV_UART_DEFAULT_CONFIG;
 	nrf_drv_uart_config_t config = 
@@ -109,9 +125,9 @@ int main(void)
 
 	ret_code = nrf_drv_uart_init( &uart_driver_instance, &config, uart_event_handler );
 
-	static uint8_t rx_buffer[1];
+	//static uint8_t rx_buffer[1];
 	static uint8_t tx_buffer[2] = { 'a', 'b' };
-	nrf_drv_uart_rx(&uart_driver_instance, rx_buffer,1);
+	nrf_drv_uart_rx( &uart_driver_instance, &rx_buffer, 1 );
 
 
     // Main loop
