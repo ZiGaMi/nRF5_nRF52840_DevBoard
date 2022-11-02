@@ -32,7 +32,7 @@
 #include "systick.h"
 
 
-/*#include "nrf_drv_saadc.h"
+#include "nrf_drv_saadc.h"
 
 
 const nrf_drv_saadc_config_t m_saadc_config = {
@@ -41,7 +41,7 @@ const nrf_drv_saadc_config_t m_saadc_config = {
     .interrupt_priority = 3,
     .low_power_mode = true};
 
-*/
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ const nrf_drv_saadc_config_t m_saadc_config = {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/*
+
 
 void saadc_callback(nrf_drv_saadc_evt_t const *p_event) 
 {
@@ -77,7 +77,7 @@ void saadc_callback(nrf_drv_saadc_evt_t const *p_event)
 
   }
 }
-*/
+
 
 
 
@@ -103,7 +103,7 @@ int main(void)
 
 
 
-/*
+
     nrf_saadc_channel_config_t channel_bat_config = {
       .resistor_p = NRF_SAADC_RESISTOR_DISABLED,
       .resistor_n = NRF_SAADC_RESISTOR_DISABLED,
@@ -120,7 +120,7 @@ int main(void)
     { 
         PROJECT_CONFIG_ASSERT( 0 );
     }
-*/
+
 
 
 
