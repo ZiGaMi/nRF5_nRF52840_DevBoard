@@ -43,22 +43,23 @@
 // Not used...
 
 // P0.03
-// Not used...
+#define ADC_IN1__PORT       0
+#define ADC_IN1__PIN        3
 
 // P0.04
-// Not used...
+#define ADC_IN2__PORT       0
+#define ADC_IN2__PIN        4
 
 // P0.05
-#define DBG_UART_RTS__PORT	0
-#define DBG_UART_RTS__PIN   5
+#define ADC_IN3__PORT       0
+#define ADC_IN3__PIN        5
 
 // P0.06
 #define DBG_UART_TX__PORT   0
 #define DBG_UART_TX__PIN    6
 
 // P0.07
-#define DBG_UART_CTS__PORT	0
-#define DBG_UART_CTS__PIN   7
+// Not used...
 
 // P0.08
 #define DBG_UART_RX__PORT   0
@@ -122,6 +123,29 @@
 // P0.25
 #define BTN_4__PORT         0
 #define BTN_4__PIN          25
+
+// P0.26
+// Not used..
+
+// P0.27
+// Not used..
+
+// P0.28
+#define ADC_IN4__PORT       0
+#define ADC_IN4__PIN        28
+
+// P0.29
+#define ADC_IN5__PORT       0
+#define ADC_IN5__PIN        29
+
+// P0.30
+#define ADC_IN6__PORT       0
+#define ADC_IN6__PIN        30
+
+// P0.31
+#define ADC_IN7__PORT       0
+#define ADC_IN7__PIN        31
+
 
 
 /*******************************************************************************

@@ -119,8 +119,8 @@ uart_dbg_status_t uart_dbg_init	(void)
 		{
 			DBG_UART_RX__PIN,
 			DBG_UART_TX__PIN,
-			DBG_UART_RTS__PIN,
-			DBG_UART_CTS__PIN,
+			NRF_UART_PSEL_DISCONNECTED,
+			NRF_UART_PSEL_DISCONNECTED,
 			true,
 			false,
 			UART_DBG_BAUDRATE
