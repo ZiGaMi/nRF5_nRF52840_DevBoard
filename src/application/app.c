@@ -28,12 +28,20 @@
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
 #include "drivers/hmi/led/led/src/led.h"
+#include "drivers/peripheral/adc/adc.h"
 
 // Middleware
 #include "middleware/cli/cli/src/cli.h"
 #include "middleware/parameters/parameters/src/par.h"
 
 #include "uart.h"
+
+
+#include "nrf_drv_saadc.h"
+#include "nrf_drv_timer.h"
+#include "nrf_drv_ppi.h"
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -59,10 +67,10 @@ static void app_btn_4_released	(void);
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -82,9 +90,17 @@ void app_init(void)
         PROJECT_CONFIG_ASSERT( 0 );
     }
 
+    // Init ADC
+    if ( eADC_OK != adc_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "ADC init error!" );
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
     // Init LEDs
     if ( eLED_OK != led_init())
     {
+    cli_printf_ch( eCLI_CH_APP, "LED init error!" );
         PROJECT_CONFIG_ASSERT( 0 );
     }
     else
@@ -96,6 +112,7 @@ void app_init(void)
     // Init buttons
     if ( eBUTTON_OK != button_init())
     {
+        cli_printf_ch( eCLI_CH_APP, "BUTTON init error!" );
         PROJECT_CONFIG_ASSERT( 0 );
     }
     else
@@ -110,12 +127,14 @@ void app_init(void)
 	// Init device paramters
 	if ( ePAR_OK != par_init())
 	{
+        cli_printf_ch( eCLI_CH_APP, "PAR init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
 
 	if ( eUART_OK != uart_1_init())
 	{
+        cli_printf_ch( eCLI_CH_APP, "UART1 init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 }
@@ -151,6 +170,8 @@ void app_hndl_100ms(void)
 {
 
 	uart_1_write( "Hello World" );
+
+    cli_printf_ch( eCLI_CH_APP, "%05d, %05d, %05d, %05d, %05d, %05d", adc_get_raw( eADC_AIN_1), adc_get_raw( eADC_AIN_2), adc_get_raw( eADC_AIN_4), adc_get_raw( eADC_AIN_5), adc_get_raw( eADC_AIN_6), adc_get_raw( eADC_AIN_7) );
 
 
 }

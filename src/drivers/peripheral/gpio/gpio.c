@@ -60,12 +60,16 @@ static bool gb_is_init = false;
 static const gpio_cfg_table_t g_gpio_cfg_table[ eGPIO_NUM_OF ] =
 {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    // OUTPUTS		PORT                      PIN                   DIRECTION                           PULL DEVICE                       INIT STATE
+    // OUTPUTS              PORT                    PIN                   DIRECTION                           PULL DEVICE                       INIT STATE
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     [eGPIO_LED_1]   = {   .port = LED_1__PORT,    .pin = LED_1__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_HIGH        },
     [eGPIO_LED_2]   = {   .port = LED_2__PORT,    .pin = LED_2__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_HIGH        },
     [eGPIO_LED_3]   = {   .port = LED_3__PORT,    .pin = LED_3__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_LOW        },
     [eGPIO_LED_4]   = {   .port = LED_4__PORT,    .pin = LED_4__PIN,    .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_LOW        },
+
+    [eGPIO_TP_1]    = {   .port = TP_1__PORT,    .pin = TP_1__PIN,      .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_LOW        },
+    [eGPIO_TP_2]    = {   .port = TP_2__PORT,    .pin = TP_2__PIN,      .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_LOW        },
+    [eGPIO_TP_3]    = {   .port = TP_3__PORT,    .pin = TP_3__PIN,      .dir = NRF_GPIO_PIN_DIR_OUTPUT,     .pull = NRF_GPIO_PIN_NOPULL,      .init_state = eGPIO_LOW        },
         
         
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

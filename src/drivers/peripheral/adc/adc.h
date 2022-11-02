@@ -3,23 +3,23 @@
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@file      gpio.h
-*@brief     GPIO
+*@file      adc.h
+*@brief     ADC low level driver
 *@author    Ziga Miklosic
-*@date      22.10.2022
+*@date      02.11.2022
 *@version   V1.0.0  (nRF5)
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@addtogroup GPIO
+*@addtogroup ADC
 * @{ <!-- BEGIN GROUP -->
 *
-* 	GPIO manipulations
+* 	ADC low level driver
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GPIO_H
-#define __GPIO_H
+#ifndef __ADC_H
+#define __ADC_H
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
@@ -28,64 +28,48 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "project_config.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * 	GPIO status
+ * 	ADC status
  */
 typedef enum
 {
-    eGPIO_OK = 0,	/**<Normal operation */
-    eGPIO_ERROR,	/**<General error code */
-} gpio_status_t;
+	eADC_OK = 0,	/**<Normal operation */
+	eADC_ERROR,		/**<General error code */
+} adc_status_t;
 
 /**
- *  GPIO pins
+ *  ADC (analog) pins
  */
 typedef enum
 {
-    // Outputs
-    eGPIO_LED_1 = 0,
-    eGPIO_LED_2,
-    eGPIO_LED_3,
-    eGPIO_LED_4,
+    // USER CODE BEGIN...
 
-    eGPIO_TP_1,
-    eGPIO_TP_2,
-    eGPIO_TP_3,
+	eADC_AIN_1 = 0,     /**< P0.03 on nRF52840 DK */
+	eADC_AIN_2,         /**< P0.04 on nRF52840 DK */
+	eADC_AIN_4,         /**< P0.28 on nRF52840 DK */
+	eADC_AIN_5,         /**< P0.29 on nRF52840 DK */
+	eADC_AIN_6,         /**< P0.30 on nRF52840 DK */
+	eADC_AIN_7,         /**< P0.31 on nRF52840 DK */
 
-    // Inputs
-    eGPIO_BTN_1,
-    eGPIO_BTN_2,
-    eGPIO_BTN_3,
-    eGPIO_BTN_4,
+    // USER CODE END...
 
-    eGPIO_NUM_OF
-} gpio_pins_t;
-
-/**
- * 	GPIO state
- */
-typedef enum
-{
-    eGPIO_LOW = 0,      /**<Logic low state */
-    eGPIO_HIGH,		/**<Logic high state */
-    eGPIO_UKNOWN,	/**<Uknown state - during startup time */
-} gpio_state_t;
+	eADC_NUM_OF
+} adc_pins_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-gpio_status_t 	gpio_init	(void);
-gpio_status_t	gpio_is_init	(bool * const p_is_init);
-gpio_state_t	gpio_get	(const gpio_pins_t pin);
-void		gpio_set	(const gpio_pins_t pin, const gpio_state_t state);
-void		gpio_toggle	(const gpio_pins_t pin);
+adc_status_t 	adc_init		(void);
+uint16_t		adc_get_raw		(const adc_pins_t pin);
+float32_t		adc_get_real	(const adc_pins_t pin);
 
-
-#endif // __GPIO_H
+#endif // __ADC_H
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
