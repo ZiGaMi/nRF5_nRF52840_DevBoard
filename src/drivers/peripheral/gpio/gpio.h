@@ -52,6 +52,10 @@ typedef enum
     eGPIO_LED_3,
     eGPIO_LED_4,
 
+    eGPIO_TP_1,
+    eGPIO_TP_2,
+    eGPIO_TP_3,
+
     // Inputs
     eGPIO_BTN_1,
     eGPIO_BTN_2,

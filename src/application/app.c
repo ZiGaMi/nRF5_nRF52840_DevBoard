@@ -34,6 +34,9 @@
 #include "middleware/parameters/parameters/src/par.h"
 
 #include "uart.h"
+#include "nrf_drv_saadc.h"
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -63,6 +66,67 @@ static void app_btn_4_released	(void);
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
+
+
+
+#define SAMPLES_IN_BUFFER   3
+
+static int16_t gi16_adc_raw[SAMPLES_IN_BUFFER] = {0};
+static uint32_t gu32_adc_event_cnt = 0;
+
+void saadc_callback(nrf_drv_saadc_evt_t const *p_event) 
+{
+  
+    switch ( p_event->type )
+    {
+        // Event generated when the buffer is filled with samples
+        case NRF_DRV_SAADC_EVT_DONE:
+
+            if ( NRF_SUCCESS == nrf_drv_saadc_buffer_convert( p_event->data.done.p_buffer, SAMPLES_IN_BUFFER ))
+            {
+                for ( uint8_t i = 0; i < SAMPLES_IN_BUFFER; i++ )
+                {
+                    gi16_adc_raw[i] = p_event->data.done.p_buffer[i];
+                }
+
+                gu32_adc_event_cnt++;
+            }
+
+            nrf_drv_saadc_sample();
+
+            gpio_toggle( eGPIO_TP_1 );
+
+
+            break;
+
+        // Event generated after one of the limits is reached
+        case NRFX_SAADC_EVT_LIMIT:
+
+            // TBD ...
+
+            break;
+
+        // Event generated when the calibration is complete
+        case NRFX_SAADC_EVT_CALIBRATEDONE:
+
+            // TBD ...
+
+            break;
+
+        default:
+            // No actions...
+            break;
+    }
+}
+
+
+
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -118,6 +182,85 @@ void app_init(void)
 	{
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
+
+
+
+
+
+    const nrf_drv_saadc_config_t m_saadc_config = 
+    {
+        .resolution         = NRF_SAADC_RESOLUTION_14BIT,
+        .oversample         = NRF_SAADC_OVERSAMPLE_DISABLED,
+        .interrupt_priority = 3,
+        .low_power_mode     = true
+    };
+
+    // Init SAR ADC
+    if ( NRF_SUCCESS != nrf_drv_saadc_init( &m_saadc_config, saadc_callback ))
+    { 
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+
+    // General configuration between all ADC channels
+    nrf_saadc_channel_config_t adc_channel_cfg = 
+    {
+        .resistor_p     = NRF_SAADC_RESISTOR_DISABLED,
+        .resistor_n     = NRF_SAADC_RESISTOR_DISABLED,
+        .gain           = NRF_SAADC_GAIN1_4,            // Gain = 1/4
+        .reference      = NRF_SAADC_REFERENCE_VDD4,     // Vref = Vdd/4
+        .acq_time       = NRF_SAADC_ACQTIME_40US,
+        .mode           = NRF_SAADC_MODE_SINGLE_ENDED,
+        .burst          = NRF_SAADC_BURST_DISABLED,
+        .pin_n          = (nrf_saadc_input_t)(NRF_SAADC_INPUT_DISABLED),
+    };
+    
+    // Analog input 1
+    adc_channel_cfg.pin_p = (nrf_saadc_input_t)( NRF_SAADC_INPUT_AIN1 );
+
+    // Init channels
+    if ( NRF_SUCCESS != nrf_drv_saadc_channel_init( 0, &adc_channel_cfg ))
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+    // Analog input 2
+    adc_channel_cfg.pin_p = (nrf_saadc_input_t)( NRF_SAADC_INPUT_AIN2 );
+
+    // Init channels
+    if ( NRF_SUCCESS != nrf_drv_saadc_channel_init( 1, &adc_channel_cfg ))
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+    // Analog input 3
+    adc_channel_cfg.pin_p = (nrf_saadc_input_t)( NRF_SAADC_INPUT_AIN4 );
+
+    // Init channels
+    if ( NRF_SUCCESS != nrf_drv_saadc_channel_init( 2, &adc_channel_cfg ))
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+
+    if ( NRF_SUCCESS != nrf_drv_saadc_buffer_convert((int16_t*) &gi16_adc_raw, SAMPLES_IN_BUFFER ))
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+    // Start ADC
+    if ( NRF_SUCCESS != nrf_drv_saadc_sample())
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+   
+
+
+
+
+
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +294,8 @@ void app_hndl_100ms(void)
 {
 
 	uart_1_write( "Hello World" );
+
+    cli_printf_ch( eCLI_CH_APP, "%05d, %05d, %05d", gi16_adc_raw[0], gi16_adc_raw[1], gi16_adc_raw[2] );
 
 
 }
