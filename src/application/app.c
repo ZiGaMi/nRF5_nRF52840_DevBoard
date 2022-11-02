@@ -34,7 +34,11 @@
 #include "middleware/parameters/parameters/src/par.h"
 
 #include "uart.h"
+
+
 #include "nrf_drv_saadc.h"
+#include "nrf_drv_timer.h"
+#include "nrf_drv_ppi.h"
 
 
 
@@ -74,6 +78,64 @@ static void app_btn_4_released	(void);
 static int16_t gi16_adc_raw[SAMPLES_IN_BUFFER] = {0};
 static uint32_t gu32_adc_event_cnt = 0;
 
+
+
+static const nrf_drv_timer_t m_timer = NRF_DRV_TIMER_INSTANCE( 1 );
+static nrf_ppi_channel_t m_ppi_channel;
+
+
+ void timer_handle(nrf_timer_event_t event_type, void * p_context)
+{
+    // No actions...
+}
+
+void timer_with_ppi_init(void)
+{
+   ret_code_t err_code; // a variable to hold the error code
+
+    // Initialize the PPI (make sure its initialized only once in your code)
+    err_code = nrf_drv_ppi_init();
+    APP_ERROR_CHECK(err_code); // check for errors
+
+    // Create a config struct which will hold the timer configurations.
+    nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG; // configure the default settings
+    timer_cfg.bit_width = NRF_TIMER_BIT_WIDTH_32; // change the timer's width to 32- bit to hold large values for ticks 
+
+    // Initialize the timer with timer handle, timer configurations, and timer handler
+    err_code = nrf_drv_timer_init(&m_timer, &timer_cfg, timer_handle);
+    APP_ERROR_CHECK(err_code); // check for errors
+
+
+    // A variable to hold the number of ticks which are calculated in this function below
+    uint32_t ticks = nrf_drv_timer_ms_to_ticks(&m_timer, 50);
+
+    // Initialize the channel 0 along with configurations and pass the Tick value for the interrupt event 
+    nrf_drv_timer_extended_compare(&m_timer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
+
+    // Enable the timer - it starts ticking as soon as this function is called 
+    nrf_drv_timer_enable(&m_timer);
+
+
+
+    // Save the address of compare event so that it can be connected to ppi module
+    uint32_t timer_compare_event_addr = nrf_drv_timer_compare_event_address_get(&m_timer, NRF_TIMER_CC_CHANNEL0);
+
+    // Save the task address to a variable so that it can be connected to ppi module for automatic triggering
+    uint32_t saadc_sample_task_addr = nrf_drv_saadc_sample_task_get();
+
+    // Allocate the ppi channel by passing it the struct created at the start
+    err_code = nrf_drv_ppi_channel_alloc(&m_ppi_channel);
+    APP_ERROR_CHECK(err_code); // check for errors
+
+
+    // attach the addresses to the allocated ppi channel so that its ready to trigger tasks on events
+    err_code = nrf_drv_ppi_channel_assign(m_ppi_channel, timer_compare_event_addr, saadc_sample_task_addr);
+    APP_ERROR_CHECK(err_code); // check for errors
+}
+
+
+
+
 void saadc_callback(nrf_drv_saadc_evt_t const *p_event) 
 {
   
@@ -82,7 +144,7 @@ void saadc_callback(nrf_drv_saadc_evt_t const *p_event)
         // Event generated when the buffer is filled with samples
         case NRF_DRV_SAADC_EVT_DONE:
 
-            if ( NRF_SUCCESS == nrf_drv_saadc_buffer_convert( p_event->data.done.p_buffer, SAMPLES_IN_BUFFER ))
+           if ( NRF_SUCCESS == nrf_drv_saadc_buffer_convert( p_event->data.done.p_buffer, SAMPLES_IN_BUFFER ))
             {
                 for ( uint8_t i = 0; i < SAMPLES_IN_BUFFER; i++ )
                 {
@@ -92,7 +154,8 @@ void saadc_callback(nrf_drv_saadc_evt_t const *p_event)
                 gu32_adc_event_cnt++;
             }
 
-            nrf_drv_saadc_sample();
+
+            //nrf_drv_saadc_sample();
 
             gpio_toggle( eGPIO_TP_1 );
 
@@ -248,14 +311,17 @@ void app_init(void)
         PROJECT_CONFIG_ASSERT( 0 );
     }
 
-    // Start ADC
+/*    // Start ADC
     if ( NRF_SUCCESS != nrf_drv_saadc_sample())
     {
         PROJECT_CONFIG_ASSERT( 0 );
     }
-   
+   */
 
+   timer_with_ppi_init();
 
+    ret_code_t err_code = nrf_drv_ppi_channel_enable(m_ppi_channel);
+    APP_ERROR_CHECK(err_code);
 
 
 
