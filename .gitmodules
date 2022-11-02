@@ -16,3 +16,6 @@
 [submodule "src/middleware/parameters/parameters"]
 	path = src/middleware/parameters/parameters
 	url = ../../GeneralEmbeddedCLibraries/parameters.git
+[submodule "src/drivers/hmi/led/led"]
+	path = src/drivers/hmi/led/led
+	url = https://github.com/GeneralEmbeddedCLibraries/led.git

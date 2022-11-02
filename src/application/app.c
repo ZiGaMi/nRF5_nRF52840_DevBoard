@@ -26,7 +26,8 @@
 #include "gpio.h"
 
 // HMI
-#include "button/src/button.h"
+#include "drivers/hmi/button/button/src/button.h"
+#include "drivers/hmi/led/led/src/led.h"
 
 // Middleware
 #include "middleware/cli/cli/src/cli.h"
@@ -81,6 +82,17 @@ void app_init(void)
         PROJECT_CONFIG_ASSERT( 0 );
     }
 
+    // Init LEDs
+    if ( eLED_OK != led_init())
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+    else
+    {
+        // Hearthbeat
+        led_blink( eLED_1, 1.0f, 2.0f, eLED_BLINK_CONTINUOUS );
+    }
+
     // Init buttons
     if ( eBUTTON_OK != button_init())
     {
@@ -118,15 +130,13 @@ void app_init(void)
 void app_hndl_10ms(void)
 {
     // Handle HMI
+    led_hndl();
     button_hndl();
 
 	// Handle CLI
 	cli_hndl();
 
 
-
-	// Debugging
-    gpio_toggle( eGPIO_LED_1 );
 
 }
 
@@ -139,7 +149,6 @@ void app_hndl_10ms(void)
 ////////////////////////////////////////////////////////////////////////////////
 void app_hndl_100ms(void)
 {
-    gpio_toggle( eGPIO_LED_2 );
 
 	uart_1_write( "Hello World" );
 
@@ -155,7 +164,6 @@ void app_hndl_100ms(void)
 ////////////////////////////////////////////////////////////////////////////////
 void app_hndl_1000ms(void)
 {
-    gpio_toggle( eGPIO_LED_3 );
 
 
 }
@@ -170,13 +178,15 @@ void app_hndl_1000ms(void)
 static void app_btn_1_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 1 pressed!" );
+    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 	
 	// Set parameter
 	par_set( ePAR_BTN_1, (uint8_t*) &(uint8_t){1} );
 
 	// Further actions here...
 
-    gpio_set( eGPIO_LED_4, eGPIO_HIGH );
+    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -195,7 +205,7 @@ static void app_btn_1_released(void)
 
 	// Further actions here...
 
-    gpio_set( eGPIO_LED_4, eGPIO_LOW );
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,11 +218,13 @@ static void app_btn_1_released(void)
 static void app_btn_2_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 2 pressed!" );
+    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_2, (uint8_t*) &(uint8_t){1} );
 
 	// Further actions here...
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -242,6 +254,7 @@ static void app_btn_2_released(void)
 static void app_btn_3_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 3 pressed!" );
+    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_3, (uint8_t*) &(uint8_t){1} );
@@ -276,6 +289,7 @@ static void app_btn_3_released(void)
 static void app_btn_4_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 4 pressed!" );
+    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_4, (uint8_t*) &(uint8_t){1} );
