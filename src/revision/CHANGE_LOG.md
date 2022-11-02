@@ -22,9 +22,6 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
     + 10ms, 100ms and 1000ms loop handlers
     + Button event callbacks
 
-### Todo
- - 
-
 ### Memory usage:
  - RAM: 21.5kB/256kB (8.4%)
  - FLASH: 50.9kB/1024kB (4.9%)
