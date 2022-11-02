@@ -1,6 +1,6 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="blinky_pca10056" target="8" version="2">
-  <project Name="blinky_pca10056">
+<solution Name="nRF52840_DK_BaseCode" target="8" version="2">
+  <project Name="nRF52840_DK_BaseCode">
     <configuration
       Name="Common"
       arm_architecture="v7EM"
