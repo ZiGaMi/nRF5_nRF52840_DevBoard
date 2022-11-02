@@ -77,6 +77,13 @@
   #define ADC_ASSERTx)                  { ; }
  #endif
 
+/**
+ *      Invalid configuration checker
+ */
+ #if (( ADC_SAMPLE_RATE_HZ > 2000) || ( ADC_SAMPLE_RATE_HZ < 1 ))
+    #error "Invalid sample rate settings! Change <ADC_SAMPLE_RATE_HZ> configuration!!!"
+ #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -96,17 +103,17 @@ static bool gb_is_init = false;
 static const nrf_saadc_channel_config_t g_adc_channel[eADC_NUM_OF] =
 {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //               Positive Pin                   Negative Pin                        Pull Up Resistor                          Pull Down Resistor                            Input Gain                  ADC Reference                           Sample Time                         Mode                                Burst Mode
+    //               Positive Pin                   Negative Pin                        Positive Pin Pull Resistor                  Negative Pin Pull Resistor                            Input Gain                  ADC Reference                           Sample Time                         Mode                                Burst Mode
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     // USER CODE BEGIN...
     
-    [eADC_AIN_1] = { .pin_p = NRF_SAADC_INPUT_AIN1, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
-    [eADC_AIN_2] = { .pin_p = NRF_SAADC_INPUT_AIN2, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
-    [eADC_AIN_4] = { .pin_p = NRF_SAADC_INPUT_AIN4, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
-    [eADC_AIN_5] = { .pin_p = NRF_SAADC_INPUT_AIN5, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
-    [eADC_AIN_6] = { .pin_p = NRF_SAADC_INPUT_AIN6, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
-    [eADC_AIN_7] = { .pin_p = NRF_SAADC_INPUT_AIN7, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_DISABLED, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_1] = { .pin_p = NRF_SAADC_INPUT_AIN1, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_2] = { .pin_p = NRF_SAADC_INPUT_AIN2, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_4] = { .pin_p = NRF_SAADC_INPUT_AIN4, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_5] = { .pin_p = NRF_SAADC_INPUT_AIN5, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_6] = { .pin_p = NRF_SAADC_INPUT_AIN6, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
+    [eADC_AIN_7] = { .pin_p = NRF_SAADC_INPUT_AIN7, .pin_n = NRF_SAADC_INPUT_DISABLED, .resistor_p = NRF_SAADC_RESISTOR_PULLDOWN, .resistor_n = NRF_SAADC_RESISTOR_DISABLED,    .gain = NRF_SAADC_GAIN1_4,  .reference = NRF_SAADC_REFERENCE_VDD4,  .acq_time = NRF_SAADC_ACQTIME_40US, .mode = NRF_SAADC_MODE_SINGLE_ENDED, .burst = NRF_SAADC_BURST_DISABLED  },
     
     // USER CODE END...
 
@@ -117,20 +124,21 @@ static const nrf_saadc_channel_config_t g_adc_channel[eADC_NUM_OF] =
  */
 static int16_t gi16_adc_raw[eADC_NUM_OF] = {0};
 
+/**
+ *      ADC Timer handler
+ */
+static const nrf_drv_timer_t g_adc_timer = NRF_DRV_TIMER_INSTANCE( 1 );
 
-
-
-static const nrf_drv_timer_t m_timer = NRF_DRV_TIMER_INSTANCE( 1 );
-static nrf_ppi_channel_t m_ppi_channel;
-
-
+/**
+ *      ADC Timer Peripheral interface
+ */
+static nrf_ppi_channel_t g_adc_ppi_channel = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
 static adc_status_t adc_init_channels   (void);
 static adc_status_t adc_init_timer      (void);
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,13 +169,27 @@ static adc_status_t adc_init_channels(void)
     return status;
 }
 
-
-
- void timer_handle(nrf_timer_event_t event_type, void * p_context)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		ADC timer event handler
+*
+* @param[in]    event_type  - Type of event that trigger handler
+* @param[in]    p_context   - Pointer to context
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void adc_timer_event_hndl(nrf_timer_event_t event_type, void * p_context)
 {
     // No actions...
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialization of ADC triggering timer
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static adc_status_t adc_init_timer(void)
 {
    adc_status_t status = eADC_OK;
@@ -183,38 +205,34 @@ static adc_status_t adc_init_timer(void)
     timer_cfg.bit_width = NRF_TIMER_BIT_WIDTH_32; // change the timer's width to 32- bit to hold large values for ticks 
 
     // Initialize the timer with timer handle, timer configurations, and timer handler
-    if ( NRF_SUCCESS != nrf_drv_timer_init(&m_timer, &timer_cfg, timer_handle))
+    if ( NRF_SUCCESS != nrf_drv_timer_init( &g_adc_timer, &timer_cfg, adc_timer_event_hndl ))
     {
         status |= eADC_ERROR;
     }
-
 
     // A variable to hold the number of ticks which are calculated in this function below
-    //uint32_t ticks = nrf_drv_timer_ms_to_ticks(&m_timer, 50);
-    uint32_t ticks = nrf_drv_timer_us_to_ticks( &m_timer, (uint32_t)( 1000000UL / ADC_SAMPLE_RATE_HZ ));
+    const uint32_t ticks = nrf_drv_timer_us_to_ticks( &g_adc_timer, (uint32_t)( 1000000UL / ADC_SAMPLE_RATE_HZ ));
 
     // Initialize the channel 0 along with configurations and pass the Tick value for the interrupt event 
-    nrf_drv_timer_extended_compare(&m_timer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
+    nrf_drv_timer_extended_compare( &g_adc_timer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false );
 
     // Enable the timer - it starts ticking as soon as this function is called 
-    nrf_drv_timer_enable(&m_timer);
-
-
+    nrf_drv_timer_enable( &g_adc_timer );
 
     // Save the address of compare event so that it can be connected to ppi module
-    uint32_t timer_compare_event_addr = nrf_drv_timer_compare_event_address_get(&m_timer, NRF_TIMER_CC_CHANNEL0);
+    const uint32_t timer_compare_event_addr = nrf_drv_timer_compare_event_address_get( &g_adc_timer, NRF_TIMER_CC_CHANNEL0 );
 
     // Save the task address to a variable so that it can be connected to ppi module for automatic triggering
-    uint32_t saadc_sample_task_addr = nrf_drv_saadc_sample_task_get();
+    const uint32_t saadc_sample_task_addr = nrf_drv_saadc_sample_task_get();
 
     // Allocate the ppi channel by passing it the struct created at the start
-    if ( NRF_SUCCESS != nrf_drv_ppi_channel_alloc(&m_ppi_channel))
+    if ( NRF_SUCCESS != nrf_drv_ppi_channel_alloc( &g_adc_ppi_channel ))
     {
         status |= eADC_ERROR;
     }
 
-    // attach the addresses to the allocated ppi channel so that its ready to trigger tasks on events
-    if ( NRF_SUCCESS != nrf_drv_ppi_channel_assign(m_ppi_channel, timer_compare_event_addr, saadc_sample_task_addr))
+    // Attach the addresses to the allocated ppi channel so that its ready to trigger tasks on events
+    if ( NRF_SUCCESS != nrf_drv_ppi_channel_assign( g_adc_ppi_channel, timer_compare_event_addr, saadc_sample_task_addr ))
     {
         status |= eADC_ERROR;
     }
@@ -222,9 +240,15 @@ static adc_status_t adc_init_timer(void)
     return status;
 }
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		ADC event handler
+*
+* @param[in]    event_type  - Type of event that trigger handler
+* @param[in]    p_context   - Pointer to context
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void adc_event_hndl(nrf_drv_saadc_evt_t const *p_event) 
 {
     // Debugging 
@@ -267,12 +291,6 @@ void adc_event_hndl(nrf_drv_saadc_evt_t const *p_event)
     }
 }
 
-
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 /**
 * @} <!-- END GROUP -->
@@ -287,7 +305,6 @@ void adc_event_hndl(nrf_drv_saadc_evt_t const *p_event)
 * 	Following function are part or ADC API.
 */
 ////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -330,7 +347,7 @@ adc_status_t adc_init(void)
         status |= adc_init_timer();
         
         // Init PPI
-        if ( NRF_SUCCESS != nrf_drv_ppi_channel_enable( m_ppi_channel ))
+        if ( NRF_SUCCESS != nrf_drv_ppi_channel_enable( g_adc_ppi_channel ))
         {
             status = eADC_ERROR;
         }
@@ -382,7 +399,7 @@ uint16_t adc_get_raw(const adc_pins_t pin)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*	G   et real ADC value
+*       Get real ADC value
 *
 *	Conversion from raw and real is part of configuration table
 *
