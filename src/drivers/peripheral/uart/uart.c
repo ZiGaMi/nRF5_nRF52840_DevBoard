@@ -127,7 +127,7 @@ static uart_status_t uart_1_init_buffers(void);
 * @return 		status		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-static void uart_1_event_handler(nrf_drv_uart_event_t * p_event, void* p_context)
+static void uart_1_event_hndl(nrf_drv_uart_event_t * p_event, void* p_context)
 {
 	uint8_t u8_data = 0;
 
@@ -204,6 +204,21 @@ static uart_status_t uart_1_init_buffers(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+* @} <!-- END GROUP -->
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*@addtogroup UART_API
+* @{ <!-- BEGIN GROUP -->
+*
+* 	Following function are part or uart API.
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Initialization of UART1
 *
 * @return 		status - Status of operation
@@ -234,7 +249,7 @@ uart_status_t uart_1_init(void)
 		};
 	
 		// Init
-		if ( NRF_SUCCESS != nrf_drv_uart_init( &gh_uart1_handler, &config, uart_1_event_handler ))
+		if ( NRF_SUCCESS != nrf_drv_uart_init( &gh_uart1_handler, &config, uart_1_event_hndl ))
 		{
 			status = eUART_ERROR;
 		}

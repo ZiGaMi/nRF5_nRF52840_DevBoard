@@ -28,6 +28,7 @@
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
 #include "drivers/hmi/led/led/src/led.h"
+#include "drivers/peripheral/adc/adc.h"
 
 // Middleware
 #include "middleware/cli/cli/src/cli.h"
@@ -71,6 +72,7 @@ static void app_btn_4_released	(void);
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 
 
 #define SAMPLES_IN_BUFFER   3
@@ -185,7 +187,7 @@ void saadc_callback(nrf_drv_saadc_evt_t const *p_event)
 
 
 
-
+*/
 
 
 
@@ -209,9 +211,17 @@ void app_init(void)
         PROJECT_CONFIG_ASSERT( 0 );
     }
 
+    // Init ADC
+    if ( eADC_OK != adc_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "ADC init error!" );
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
     // Init LEDs
     if ( eLED_OK != led_init())
     {
+    cli_printf_ch( eCLI_CH_APP, "LED init error!" );
         PROJECT_CONFIG_ASSERT( 0 );
     }
     else
@@ -223,6 +233,7 @@ void app_init(void)
     // Init buttons
     if ( eBUTTON_OK != button_init())
     {
+        cli_printf_ch( eCLI_CH_APP, "BUTTON init error!" );
         PROJECT_CONFIG_ASSERT( 0 );
     }
     else
@@ -237,19 +248,21 @@ void app_init(void)
 	// Init device paramters
 	if ( ePAR_OK != par_init())
 	{
+        cli_printf_ch( eCLI_CH_APP, "PAR init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
 
 	if ( eUART_OK != uart_1_init())
 	{
+        cli_printf_ch( eCLI_CH_APP, "UART1 init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
 
 
 
-
+/*
     const nrf_drv_saadc_config_t m_saadc_config = 
     {
         .resolution         = NRF_SAADC_RESOLUTION_14BIT,
@@ -311,12 +324,6 @@ void app_init(void)
         PROJECT_CONFIG_ASSERT( 0 );
     }
 
-/*    // Start ADC
-    if ( NRF_SUCCESS != nrf_drv_saadc_sample())
-    {
-        PROJECT_CONFIG_ASSERT( 0 );
-    }
-   */
 
    timer_with_ppi_init();
 
@@ -325,7 +332,7 @@ void app_init(void)
 
 
 
-
+*/
 
 }
 
@@ -361,7 +368,7 @@ void app_hndl_100ms(void)
 
 	uart_1_write( "Hello World" );
 
-    cli_printf_ch( eCLI_CH_APP, "%05d, %05d, %05d", gi16_adc_raw[0], gi16_adc_raw[1], gi16_adc_raw[2] );
+    cli_printf_ch( eCLI_CH_APP, "%05d, %05d, %05d", adc_get_raw( eADC_AIN_1), adc_get_raw( eADC_AIN_2), adc_get_raw( eADC_AIN_4) );
 
 
 }
