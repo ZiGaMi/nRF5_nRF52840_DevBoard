@@ -61,6 +61,7 @@ static void app_btn_3_released	(void);
 static void app_btn_4_pressed	(void);
 static void app_btn_4_released	(void);
 
+static void app_update_adc_pars (void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -154,6 +155,9 @@ void app_hndl_10ms(void)
 
 	// Handle CLI
 	cli_hndl();
+
+	// Update ADC raw values
+	app_update_adc_pars();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,6 +328,36 @@ static void app_btn_4_released(void)
 	par_set( ePAR_BTN_4, (uint8_t*) &(uint8_t){0} );
 
 	// Further actions here...
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       Update ADC parameters
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void app_update_adc_pars(void)
+{
+	uint16_t adc_val;
+
+	adc_val = adc_get_raw( eADC_AIN_1 );
+	par_set( ePAR_AIN_1, (uint16_t*) &adc_val );
+
+	adc_val = adc_get_raw( eADC_AIN_2 );
+	par_set( ePAR_AIN_2, (uint16_t*) &adc_val );
+
+	adc_val = adc_get_raw( eADC_AIN_4 );
+	par_set( ePAR_AIN_4, (uint16_t*) &adc_val );
+
+	adc_val = adc_get_raw( eADC_AIN_5 );
+	par_set( ePAR_AIN_5, (uint16_t*) &adc_val );
+
+	adc_val = adc_get_raw( eADC_AIN_6 );
+	par_set( ePAR_AIN_6, (uint16_t*) &adc_val );
+
+	adc_val = adc_get_raw( eADC_AIN_7 );
+	par_set( ePAR_AIN_7, (uint16_t*) &adc_val );
 }
 
 

@@ -62,6 +62,13 @@ typedef enum
 	ePAR_BTN_3,
 	ePAR_BTN_4,
 
+	ePAR_AIN_1,
+	ePAR_AIN_2,
+	ePAR_AIN_4,
+	ePAR_AIN_5,
+	ePAR_AIN_6,
+	ePAR_AIN_7,
+
 	// USER CODE END...
 
 	ePAR_NUM_OF
