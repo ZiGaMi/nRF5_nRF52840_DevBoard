@@ -37,6 +37,10 @@
 #include "app_usbd_cdc_acm.h"
 #include "app_usbd_serial_num.h"
 
+
+// Debugging
+#include "gpio.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,10 +105,10 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
  */
 static bool gb_is_init = false;
 
- /**
-  *		Dummy reception buffers
-  */
-  static uint8_t gu8_usb_cdc_rx_buf = 0;
+/**
+ *		Dummy reception buffers
+ */
+static uint8_t gu8_usb_cdc_rx_buf = 0;
 
 /**
  * 	USB CDC Rx buffer space
@@ -116,7 +120,7 @@ static uint8_t gu8_usb_cdc_rx_buffer[USB_CDC_RX_BUF_SIZE] = {0};
  */
 static p_ring_buffer_t 		g_rx_buffer = NULL;
 const ring_buffer_attr_t 	g_rx_buffer_attr  = { 	.name 		= "USB CDC Rx Buf",
-													.item_size 	= sizeof(uint8_t),
+													.item_size 	= 1,
 													.override 	= false,
 													.p_mem 		= &gu8_usb_cdc_rx_buffer };
 
@@ -180,6 +184,8 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 }
 
 
+static volatile uint8_t u8_data = 0;
+
 /**
  * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
  * */
@@ -196,7 +202,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
            // bsp_board_led_on(LED_CDC_ACM_OPEN);
 
 			// Dummy read
-			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
+			app_usbd_cdc_acm_read( &m_app_cdc_acm, &u8_data, 1 );
 
 
 		
@@ -209,24 +215,37 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
             //bsp_board_led_invert(LED_CDC_ACM_TX);
-            break;
+
+			 //app_usbd_cdc_acm_read_any( &m_app_cdc_acm, u8_data, 1 );
+            
+			break;
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {
            
-		   
+		   gpio_toggle( eGPIO_TP_1 );
+
 		    ret_code_t ret;
-			uint8_t u8_data;
+			
 
            // NRF_LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
-            do
+           
+		   uint32_t size = app_usbd_cdc_acm_bytes_stored( p_cdc_acm );
+		   
+			ring_buffer_add( g_rx_buffer, &u8_data );
+
+		    do
             {
                 /*Get amount of data transfered*/
                 //size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
                 //NRF_LOG_INFO("RX: size: %lu char: %c", size, m_rx_buffer[0]);
 
+
+				ret =  app_usbd_cdc_acm_read( &m_app_cdc_acm, &u8_data, 1 );
+
+
                 /* Fetch data until internal buffer is empty */
-                if ( NRF_SUCCESS == app_usbd_cdc_acm_read( &m_app_cdc_acm, &u8_data, 1 ))
+                if ( NRF_SUCCESS == ret )
 				{
 
 
@@ -347,15 +366,17 @@ usb_cdc_status_t usb_cdc_init(void)
 
 
 
-usb_cdc_status_t usb_cdc_hndl	(void)
+usb_cdc_status_t usb_cdc_hndl(void)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
 
-	while (app_usbd_event_queue_process())
+	if ( true == gb_is_init )
 	{
-	/* Nothing to do */
+		while (app_usbd_event_queue_process())
+		{
+		/* Nothing to do */
+		}
 	}
-
 	return status;
 }
 
@@ -374,7 +395,6 @@ usb_cdc_status_t usb_cdc_hndl	(void)
 usb_cdc_status_t usb_cdc_write	(const char* pc_string)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
-
 
 	app_usbd_cdc_acm_write( &m_app_cdc_acm, pc_string, strlen(pc_string));
 
