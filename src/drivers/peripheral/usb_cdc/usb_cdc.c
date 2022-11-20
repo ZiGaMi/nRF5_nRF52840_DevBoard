@@ -184,8 +184,6 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 }
 
 
-static volatile uint8_t u8_data = 0;
-
 /**
  * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
  * */
@@ -202,7 +200,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
            // bsp_board_led_on(LED_CDC_ACM_OPEN);
 
 			// Dummy read
-			app_usbd_cdc_acm_read( &m_app_cdc_acm, &u8_data, 1 );
+			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
 
 
 		
@@ -215,8 +213,6 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
             //bsp_board_led_invert(LED_CDC_ACM_TX);
-
-			 //app_usbd_cdc_acm_read_any( &m_app_cdc_acm, u8_data, 1 );
             
 			break;
 
@@ -224,46 +220,21 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         {
            
 		   gpio_toggle( eGPIO_TP_1 );
-
-		    ret_code_t ret;
 			
-
-           // NRF_LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
-           
-		   uint32_t size = app_usbd_cdc_acm_bytes_stored( p_cdc_acm );
-		   
-			ring_buffer_add( g_rx_buffer, &u8_data );
-
-		    do
-            {
-                /*Get amount of data transfered*/
-                //size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
-                //NRF_LOG_INFO("RX: size: %lu char: %c", size, m_rx_buffer[0]);
-
-
-				ret =  app_usbd_cdc_acm_read( &m_app_cdc_acm, &u8_data, 1 );
-
-
-                /* Fetch data until internal buffer is empty */
-                if ( NRF_SUCCESS == ret )
+			// Take all bytes from reception buffer
+			do
+			{
+				// Store rx char to buffer
+				if ( eRING_BUFFER_OK == ring_buffer_add( g_rx_buffer, &gu8_usb_cdc_rx_buf ))
 				{
-
-
-					// Store rx char to buffer
-					if ( eRING_BUFFER_OK == ring_buffer_add( g_rx_buffer, &u8_data ))
-					{
-						// No actions...
-					}
-					else
-					{
-						// TODO: handle error
-					}
+					// No actions...
+				}
+				else
+				{
+					// TODO: handle error
 				}
 
-            } while (ret == NRF_SUCCESS);
-
-	
-
+			} while ( NRF_SUCCESS == app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 ));
 
             break;
         }
