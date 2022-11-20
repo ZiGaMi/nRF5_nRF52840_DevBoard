@@ -1674,7 +1674,7 @@
 // <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver
 //==========================================================
 #ifndef NRFX_CLOCK_ENABLED
-#define NRFX_CLOCK_ENABLED 0
+#define NRFX_CLOCK_ENABLED 1
 #endif
 // <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF Clock Source
  
@@ -4347,6 +4347,13 @@
 
 // </e>
 
+// <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver
+ 
+
+#ifndef NRFX_SYSTICK_ENABLED
+#define NRFX_SYSTICK_ENABLED 1
+#endif
+
 // <e> NRFX_UARTE_ENABLED - nrfx_uarte - UARTE peripheral driver
 //==========================================================
 #ifndef NRFX_UARTE_ENABLED
@@ -4472,6 +4479,13 @@
 // </e>
 
 // </e>
+
+// <q> SYSTICK_ENABLED  - nrf_drv_systick - ARM(R) SysTick driver - legacy layer
+ 
+
+#ifndef SYSTICK_ENABLED
+#define SYSTICK_ENABLED 1
+#endif
 
 // <e> NRFX_UART_ENABLED - nrfx_uart - UART peripheral driver
 //==========================================================
@@ -4751,7 +4765,7 @@
 // <e> NRF_CLOCK_ENABLED - nrf_drv_clock - CLOCK peripheral driver - legacy layer
 //==========================================================
 #ifndef NRF_CLOCK_ENABLED
-#define NRF_CLOCK_ENABLED 0
+#define NRF_CLOCK_ENABLED 1
 #endif
 // <o> CLOCK_CONFIG_LF_SRC  - LF Clock Source
  

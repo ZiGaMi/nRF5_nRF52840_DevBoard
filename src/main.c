@@ -100,27 +100,27 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             break;
 
         case APP_USBD_EVT_STOPPED:
-            //app_usbd_disable();
+            app_usbd_disable();
            // bsp_board_leds_off();
             break;
 
         case APP_USBD_EVT_POWER_DETECTED:
             //NRF_LOG_INFO("USB power detected");
 
-            //if (!nrf_drv_usbd_is_enabled())
-            //{
-            //    app_usbd_enable();
-            //}
+            if (!nrf_drv_usbd_is_enabled())
+            {
+                app_usbd_enable();
+            }
             break;
 
         case APP_USBD_EVT_POWER_REMOVED:
             //NRF_LOG_INFO("USB power removed");
-            //app_usbd_stop();
+            app_usbd_stop();
             break;
 
         case APP_USBD_EVT_POWER_READY:
            // NRF_LOG_INFO("USB ready");
-           // app_usbd_start();
+            app_usbd_start();
             break;
 
         default:
@@ -141,16 +141,16 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
     {
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
         {
-		#if 0
-            bsp_board_led_on(LED_CDC_ACM_OPEN);
+		
+           // bsp_board_led_on(LED_CDC_ACM_OPEN);
 
             /*Setup first transfer*/
-            ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
-                                                   m_rx_buffer,
-                                                   READ_SIZE);
-            UNUSED_VARIABLE(ret);
+            //ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+             //                                      m_rx_buffer,
+              //                                     READ_SIZE);
+            //UNUSED_VARIABLE(ret);
 
-		#endif
+		
             break;
         }
 
@@ -226,6 +226,17 @@ int main(void)
 
 	// ____________________________________________________________________________________________________
     
+	uint32_t ret;
+	ret = nrf_drv_clock_init();
+    APP_ERROR_CHECK(ret);
+    
+    nrf_drv_clock_lfclk_request(NULL);
+
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    }
+
 	
 	static const app_usbd_config_t usbd_config = {
         .ev_state_proc = usbd_user_ev_handler
@@ -259,6 +270,13 @@ int main(void)
     // Main loop
     while ( 1 )
     {
+
+        while (app_usbd_event_queue_process())
+        {
+            /* Nothing to do */
+        }
+
+
         // Get current systick
         cnt = systick_get_ms();
 

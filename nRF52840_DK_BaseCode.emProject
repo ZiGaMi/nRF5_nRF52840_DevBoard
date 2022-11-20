@@ -82,6 +82,10 @@
       <file file_name="nRF5_SDK/modules/nrfx/drivers/src/nrfx_ppi.c" />
       <file file_name="nRF5_SDK/integration/nrfx/legacy/nrf_drv_ppi.c" />
       <file file_name="nRF5_SDK/modules/nrfx/drivers/src/nrfx_usbd.c" />
+      <file file_name="nRF5_SDK/modules/nrfx/drivers/src/nrfx_clock.c" />
+      <file file_name="nRF5_SDK/integration/nrfx/legacy/nrf_drv_clock.c" />
+      <file file_name="nRF5_SDK/integration/nrfx/legacy/nrf_drv_power.c" />
+      <file file_name="nRF5_SDK/modules/nrfx/drivers/src/nrfx_power.c" />
     </folder>
     <folder Name="application">
       <file file_name="src/main.c" />
