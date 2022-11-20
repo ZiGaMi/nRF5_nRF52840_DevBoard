@@ -70,7 +70,7 @@
  *
  * 			If not used leave empty. E.g. ""
  */
-#define CLI_CFG_TERMINATION_STRING				((const uint8_t*) ( "\r\n" ))
+#define CLI_CFG_TERMINATION_STRING				((const uint8_t*) ( "\r" ))
 
 /**
  * 	Transmission buffer size in bytes
