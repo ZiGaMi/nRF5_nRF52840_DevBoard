@@ -137,6 +137,8 @@ const ring_buffer_attr_t 	g_tx_buffer_attr  = { 	.name 		= "USB CDC Tx Buf",
 
 
 static volatile bool gb_tx_in_progress = false;
+static volatile bool gb_is_port_open = false;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -233,18 +235,25 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 			// Dummy read
 			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
 
-			gb_tx_in_progress = false;
+			//gb_tx_in_progress = false;
+
+			gb_is_port_open = true;
 		
             break;
         }
 
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
             //bsp_board_led_off(LED_CDC_ACM_OPEN);
+
+			gb_is_port_open = false;
             break;
 
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
             //bsp_board_led_invert(LED_CDC_ACM_TX);
+			
+			gb_tx_in_progress = false;
 
+			#if 0
 			uint8_t tx_data = 0;
 
 			// Send next char from tx buffer
@@ -258,6 +267,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 			{
 				gb_tx_in_progress = false;
 			}
+			#endif
 		
 			break;
 
@@ -412,9 +422,22 @@ usb_cdc_status_t usb_cdc_write	(const char* str)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
 
-	//app_usbd_cdc_acm_write( &m_app_cdc_acm, pc_string, strlen(pc_string));
+	if ( true == gb_is_port_open )
+	{
 
+		gb_tx_in_progress = true;
 
+		app_usbd_cdc_acm_write( &m_app_cdc_acm, str, strlen(str));
+
+		while ( true == gb_tx_in_progress )
+		{
+			// TODO: Implement timeout...
+
+			usb_cdc_hndl();
+		}
+	}
+
+	#if 0
 	uint8_t u8_data = 0;
 
 	USB_CDC_ASSERT( true == gb_is_init );
@@ -465,6 +488,7 @@ usb_cdc_status_t usb_cdc_write	(const char* str)
 	{
 		status = eUSB_CDC_ERROR;
 	}
+	#endif
 
 	return status;
 }
