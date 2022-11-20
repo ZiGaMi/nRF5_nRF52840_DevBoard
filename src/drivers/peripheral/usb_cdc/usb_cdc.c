@@ -58,11 +58,12 @@
  #endif
 
 /**
- *		USB CDC reception buffer size
+ *		USB CDC buffer size
  *
  *	Unit: byte
  */                     
-#define USB_CDC_RX_BUF_SIZE			( 512 )  
+#define USB_CDC_RX_BUF_SIZE			( 1024 )  
+#define USB_CDC_TX_BUF_SIZE			( 1024 )  
 
 
 
@@ -111,9 +112,10 @@ static bool gb_is_init = false;
 static uint8_t gu8_usb_cdc_rx_buf = 0;
 
 /**
- * 	USB CDC Rx buffer space
+ * 	USB CDC Tx/Rx buffer space
  */
 static uint8_t gu8_usb_cdc_rx_buffer[USB_CDC_RX_BUF_SIZE] = {0};
+static uint8_t gu8_usb_cdc_tx_buffer[USB_CDC_TX_BUF_SIZE] = {0};
 
 /**
  * 	USB CDC Rx buffer
@@ -124,11 +126,22 @@ const ring_buffer_attr_t 	g_rx_buffer_attr  = { 	.name 		= "USB CDC Rx Buf",
 													.override 	= false,
 													.p_mem 		= &gu8_usb_cdc_rx_buffer };
 
+/**
+ * 	USB CDC Tx buffer
+ */
+static p_ring_buffer_t 		g_tx_buffer = NULL;
+const ring_buffer_attr_t 	g_tx_buffer_attr  = { 	.name 		= "USB CDC Tx Buf",
+													.item_size 	= 1,
+													.override 	= false,
+													.p_mem 		= &gu8_usb_cdc_tx_buffer };
 
+
+static volatile bool gb_tx_in_progress = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
+static usb_cdc_status_t usb_cdc_init_buffers(void);
 static void usbd_user_ev_handler(app_usbd_event_type_t event);
 
 
@@ -137,6 +150,24 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event);
 ////////////////////////////////////////////////////////////////////////////////
 
 
+static usb_cdc_status_t usb_cdc_init_buffers(void)
+{
+	usb_cdc_status_t status = eUSB_CDC_OK;
+
+	// Init Tx buffer
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer, USB_CDC_TX_BUF_SIZE, &g_tx_buffer_attr ))
+	{
+		status = eUSB_CDC_ERROR;
+	}
+
+	// Init Rx buffer
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer, USB_CDC_RX_BUF_SIZE, &g_rx_buffer_attr ))
+	{
+		status = eUSB_CDC_ERROR;
+	}
+
+	return status;
+}
 
 
 static void usbd_user_ev_handler(app_usbd_event_type_t event)
@@ -202,7 +233,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 			// Dummy read
 			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
 
-
+			gb_tx_in_progress = false;
 		
             break;
         }
@@ -213,7 +244,21 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
             //bsp_board_led_invert(LED_CDC_ACM_TX);
-            
+
+			uint8_t tx_data = 0;
+
+			// Send next char from tx buffer
+			if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer, &tx_data ))
+			{
+				app_usbd_cdc_acm_write( &m_app_cdc_acm, &tx_data, 1 );
+			}
+
+			// Tx fifo empty
+			else
+			{
+				gb_tx_in_progress = false;
+			}
+		
 			break;
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
@@ -276,6 +321,11 @@ usb_cdc_status_t usb_cdc_init(void)
 	if ( false == gb_is_init )
 	{
 	
+		// Init Rx/Tx buffers
+		status |= usb_cdc_init_buffers();
+
+
+
 		uint32_t ret;
 		ret = nrf_drv_clock_init();
 	    APP_ERROR_CHECK(ret);
@@ -314,12 +364,7 @@ usb_cdc_status_t usb_cdc_init(void)
 	    }
 
 
-		// Init Rx buffer
-		if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer, USB_CDC_RX_BUF_SIZE, &g_rx_buffer_attr ))
-		{
-			status = eUSB_CDC_ERROR;
-		}
-
+		
 
 		// Init success
 		if ( eUSB_CDC_OK == status )
@@ -363,11 +408,63 @@ usb_cdc_status_t usb_cdc_hndl(void)
 * @return 		status		- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-usb_cdc_status_t usb_cdc_write	(const char* pc_string)
+usb_cdc_status_t usb_cdc_write	(const char* str)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
 
-	app_usbd_cdc_acm_write( &m_app_cdc_acm, pc_string, strlen(pc_string));
+	//app_usbd_cdc_acm_write( &m_app_cdc_acm, pc_string, strlen(pc_string));
+
+
+	uint8_t u8_data = 0;
+
+	USB_CDC_ASSERT( true == gb_is_init );
+	USB_CDC_ASSERT( NULL != str );
+
+	if	(	( true == gb_is_init ) 
+		&&	( NULL != str ))
+	{
+		// Get lenght of string
+		const uint32_t str_len = strlen( str );
+
+		// Put all to fifo
+		for ( uint32_t ch = 0; ch < str_len; ch++ )
+		{
+			// Put char to tx buffer
+			if ( eRING_BUFFER_OK != ring_buffer_add( g_tx_buffer, (const char*) str ))
+			{
+				// TODO: handle error if not all data added
+				break;
+			}
+
+			// Move thru string
+			str++;
+		}
+
+        // The new byte has been added to FIFO. It will be picked up from there
+        // (in 'uart_event_handler') when all preceding bytes are transmitted.
+        // But if UART is not transmitting anything at the moment, we must start
+        // a new transmission here.
+        //if ( false == nrf_drv_uart_tx_in_progress( &gh_uart1_handler ))
+		if ( false == gb_tx_in_progress )
+        {
+            // This operation should be almost always successful, since we've
+            // just added a byte to FIFO, but if some bigger delay occurred
+            // (some heavy interrupt handler routine has been executed) since
+            // that time, FIFO might be empty already.
+
+			gb_tx_in_progress = true;
+            
+			// Start trasmission by sending first char from fifo
+			if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer, &u8_data ))
+			{
+				app_usbd_cdc_acm_write( &m_app_cdc_acm, &u8_data, 1 );
+			}
+        }	
+	}
+	else
+	{
+		status = eUSB_CDC_ERROR;
+	}
 
 	return status;
 }

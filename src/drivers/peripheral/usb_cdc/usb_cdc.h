@@ -47,7 +47,7 @@ typedef enum
 ////////////////////////////////////////////////////////////////////////////////
 usb_cdc_status_t usb_cdc_init	(void);
 usb_cdc_status_t usb_cdc_hndl	(void);
-usb_cdc_status_t usb_cdc_write	(const char* pc_string);
+usb_cdc_status_t usb_cdc_write	(const char* str);
 usb_cdc_status_t usb_cdc_get	(char * const p_char);
 
 
