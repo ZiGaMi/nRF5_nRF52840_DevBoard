@@ -22,8 +22,10 @@
 #include "project_config.h"
 #include "pin_mapper.h"
 
-
-#include "gpio.h"
+// Drivers
+#include "drivers/peripheral/gpio/gpio.h"
+#include "drivers/peripheral/uart/uart.h"
+#include "drivers/peripheral/usb_cdc/usb_cdc.h"
 
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
@@ -34,20 +36,10 @@
 #include "middleware/cli/cli/src/cli.h"
 #include "middleware/parameters/parameters/src/par.h"
 
-#include "uart.h"
-
-
-#include "nrf_drv_saadc.h"
-#include "nrf_drv_timer.h"
-#include "nrf_drv_ppi.h"
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -158,6 +150,9 @@ void app_hndl_10ms(void)
 
 	// Update ADC raw values
 	app_update_adc_pars();
+
+	// Handle USB CDC
+	usb_cdc_hndl();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

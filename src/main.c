@@ -31,10 +31,6 @@
 // Periphery
 #include "systick.h"
 
-
-#include "usb_cdc.h"
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,21 +67,9 @@ int main(void)
     // Init application
     app_init();
 
-	// ____________________________________________________________________________________________________
-    
-
-	usb_cdc_init();
-
-	// ____________________________________________________________________________________________________
-
-
     // Main loop
     while ( 1 )
     {
-
-
-
-
         // Get current systick
         cnt = systick_get_ms();
 
@@ -95,8 +79,6 @@ int main(void)
             cnt_p_10ms = cnt;
 
             app_hndl_10ms();
-
-			usb_cdc_hndl();
         }
 
         // 100ms loop
@@ -113,16 +95,6 @@ int main(void)
             cnt_p_1000ms = cnt;
 
             app_hndl_1000ms();
-
-			usb_cdc_write( "Hello World \r" );
-
-
-			uint8_t u8_data;
-			while( usb_cdc_get( &u8_data) == eUSB_CDC_OK )
-			{
-				usb_cdc_write( u8_data );
-			}
-
         }
     }
 }
