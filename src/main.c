@@ -271,10 +271,7 @@ int main(void)
     while ( 1 )
     {
 
-        while (app_usbd_event_queue_process())
-        {
-            /* Nothing to do */
-        }
+
 
 
         // Get current systick
@@ -286,6 +283,11 @@ int main(void)
             cnt_p_10ms = cnt;
 
             app_hndl_10ms();
+
+			while (app_usbd_event_queue_process())
+			{
+				/* Nothing to do */
+			}
         }
 
         // 100ms loop
@@ -302,6 +304,8 @@ int main(void)
             cnt_p_1000ms = cnt;
 
             app_hndl_1000ms();
+
+			app_usbd_cdc_acm_write( &m_app_cdc_acm, "Hello World\r", 12);
         }
     }
 }
