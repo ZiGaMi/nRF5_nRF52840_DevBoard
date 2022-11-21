@@ -11,7 +11,7 @@
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
-* @addtogroup UART
+* @addtogroup USB_CDC
 * @{ <!-- BEGIN GROUP -->
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,27 +94,14 @@
  */                     
 #define USB_CDC_RX_BUF_SIZE                 ( 512 )  
 
-
-
-
-
- 
-
-
-
-#define USBD_POWER_DETECTION true
-
-
-
-
-#define CDC_ACM_COMM_INTERFACE  0
-#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
-
-#define CDC_ACM_DATA_INTERFACE  1
-#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
-#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
-
-
+/**
+ *  USB CDC Class settings
+ */
+#define USB_CDC_ACM_COMM_INTERFACE          ( 0 )                       // Interface number of cdc_acm control
+#define USB_CDC_ACM_COMM_EPIN               ( NRF_DRV_USBD_EPIN2 )      // COMM subclass IN endpoint
+#define USB_CDC_ACM_DATA_INTERFACE          ( 1 )                       // Interface number of cdc_acm DATA
+#define USB_CDC_ACM_DATA_EPIN               ( NRF_DRV_USBD_EPIN1 )      // DATA subclass IN endpoint
+#define USB_CDC_ACM_DATA_EPOUT              ( NRF_DRV_USBD_EPOUT1 )     // DATA subclass OUT endpoint
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,36 +132,38 @@ const ring_buffer_attr_t 	g_rx_buffer_attr  = { 	.name 		= "USB CDC Rx Buf",
 													.override 	= false,
 													.p_mem 		= &gu8_usb_cdc_rx_buffer };
 
-
+/**
+ *  Is transmission in progress flag
+ */
 static volatile bool gb_tx_in_progress = false;
-static volatile bool gb_is_port_open = false;
 
+/**
+ *  Is port open flag
+ */
+static volatile bool gb_is_port_open = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
 static usb_cdc_status_t usb_cdc_init_buffers        (void);
 static void             usb_cdc_event_cdc_hndl      (app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event);
-static void             usbd_user_ev_handler        (app_usbd_event_type_t event);
-
+static void             usb_cdc_event_usbd_hndl     (app_usbd_event_type_t event);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-
 
 /**
  * 	Create USB CDC Handler
  */
 APP_USBD_CDC_ACM_GLOBAL_DEF(    gh_usb_cdc, 
                                 usb_cdc_event_cdc_hndl,
-                                CDC_ACM_COMM_INTERFACE,
-                                CDC_ACM_DATA_INTERFACE,
-                                CDC_ACM_COMM_EPIN,
-                                CDC_ACM_DATA_EPIN,
-                                CDC_ACM_DATA_EPOUT,
+                                USB_CDC_ACM_COMM_INTERFACE,
+                                USB_CDC_ACM_DATA_INTERFACE,
+                                USB_CDC_ACM_COMM_EPIN,
+                                USB_CDC_ACM_DATA_EPIN,
+                                USB_CDC_ACM_DATA_EPOUT,
                                 APP_USBD_CDC_COMM_PROTOCOL_AT_V250 );
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -196,8 +185,15 @@ static usb_cdc_status_t usb_cdc_init_buffers(void)
 	return status;
 }
 
-
-static void usbd_user_ev_handler(app_usbd_event_type_t event)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		USB Device event handler
+*
+* @param[in]    event   - Event that raise handler
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void usb_cdc_event_usbd_hndl(app_usbd_event_type_t event)
 {
     switch (event)
     {
@@ -384,56 +380,42 @@ static void usb_cdc_event_cdc_hndl(app_usbd_class_inst_t const * p_inst, app_usb
 ////////////////////////////////////////////////////////////////////////////////
 usb_cdc_status_t usb_cdc_init(void)
 {
-	usb_cdc_status_t status = eUSB_CDC_OK;
+	usb_cdc_status_t                status      = eUSB_CDC_OK;
+    static const app_usbd_config_t  usbd_config = { .ev_state_proc = usb_cdc_event_usbd_hndl };
 
 	if ( false == gb_is_init )
 	{
-	
 		// Init Rx/Tx buffers
 		status |= usb_cdc_init_buffers();
 
-
-
-		uint32_t ret;
-		ret = nrf_drv_clock_init();
-	    APP_ERROR_CHECK(ret);
-    
+        // Init clock 
+        if ( NRF_SUCCESS != nrf_drv_clock_init())
+        {
+            status = eUSB_CDC_ERROR;
+        }
+        
+        // Request low frequency clock
 	    nrf_drv_clock_lfclk_request(NULL);
 
-	    while(!nrf_drv_clock_lfclk_is_running())
+        // Wait for low frequency clock to start
+	    while( !nrf_drv_clock_lfclk_is_running() )
 	    {
-	        /* Just waiting */
+	        // TODO: Implement timeout !
 	    }
 
-	
-		static const app_usbd_config_t usbd_config = {
-	        .ev_state_proc = usbd_user_ev_handler
-	    };
-
-
+        // Generate a standard USB serial number that is unique for each device
 		app_usbd_serial_num_generate();
+
+        // Init USB Device
 	    app_usbd_init(&usbd_config);
 
-
+        // Get CDC class and add to USB Device class
 	    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get( &gh_usb_cdc );
-
 	    app_usbd_class_append(class_cdc_acm);
 
-
+        // Enable power detection
+        app_usbd_power_events_enable();
 	
-	    if (USBD_POWER_DETECTION)
-	    {
-	        app_usbd_power_events_enable();
-	    }
-	    else
-	    {
-	        app_usbd_enable();
-	        app_usbd_start();
-	    }
-
-
-		
-
 		// Init success
 		if ( eUSB_CDC_OK == status )
 		{
@@ -448,23 +430,32 @@ usb_cdc_status_t usb_cdc_init(void)
 	return status;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Handle USB CDC 
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 usb_cdc_status_t usb_cdc_hndl(void)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
 
 	if ( true == gb_is_init )
-	{
-		while (app_usbd_event_queue_process())
+	{   
+        // Process USB events
+		while ( app_usbd_event_queue_process() )
 		{
-		/* Nothing to do */
+            // TODO: Implement timeout...
 		}
 	}
+    else
+    {
+        status = eUSB_CDC_ERROR;
+    }
+
 	return status;
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -502,10 +493,12 @@ usb_cdc_status_t usb_cdc_write(const char* str)
              *  Check also if port is still open as it might happend that during transmission USB 
              *  cable is removed!
              */
-    		while ( true == gb_tx_in_progress && true == gb_is_port_open )
+    		while   (   ( true == gb_tx_in_progress )
+                    &&  ( true == gb_is_port_open ))
     		{
     			// TODO: Implement timeout...
 
+                // Handle events
     			usb_cdc_hndl();
     		}
     	}
