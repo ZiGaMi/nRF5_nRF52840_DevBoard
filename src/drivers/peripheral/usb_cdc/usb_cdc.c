@@ -31,9 +31,11 @@
 // Debug communication port
 #include "middleware/cli/cli/src/cli.h"
 
+// nRF USB drivers
 #include "nrf_drv_usbd.h"
 #include "nrf_drv_clock.h"
 
+// USB Device application lib
 #include "app_usbd_core.h"
 #include "app_usbd.h"
 #include "app_usbd_string_desc.h"
@@ -41,13 +43,9 @@
 #include "app_usbd_serial_num.h"
 
 
-// Debugging
-#include "gpio.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
-
 
 /**
  * 	Enable/Disable debug mode
@@ -203,44 +201,82 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 {
     switch (event)
     {
+        // This device should go to suspend mode now
         case APP_USBD_EVT_DRV_SUSPEND:
-            //bsp_board_led_off(LED_USB_RESUME);
+
+            // No actions...
+
             break;
 
+        // This device should resume from suspend now
         case APP_USBD_EVT_DRV_RESUME:
-            //bsp_board_led_on(LED_USB_RESUME);
-            break;
 
+            // No actions...
+
+            break;
+    
+        // USBD library has just been started and functional - event passed to all instances, before USBD interrupts have been enabled
         case APP_USBD_EVT_STARTED:
+            
+            // No actions...
+
             break;
 
+        // USBD library has just been stopped and is not functional - event passed to all instances, after USBD interrupts have been disabled
         case APP_USBD_EVT_STOPPED:
+
+            // Disable USB device
             app_usbd_disable();
-           // bsp_board_leds_off();
+
             break;
 
+        // USB power detected on the connector (plugged in)
         case APP_USBD_EVT_POWER_DETECTED:
-            USB_CDC_DBG_PRINT("USB_CDC: USB power detected");
-
-            if (!nrf_drv_usbd_is_enabled())
+            
+            // Enable USB device is not already
+            if ( !nrf_drv_usbd_is_enabled() )
             {
                 app_usbd_enable();
             }
-            break;
 
+            // Raise callback
+            usb_cdc_plugged_cb();
+
+            // Debug 
+            USB_CDC_DBG_PRINT("USB_CDC: USB power detected");
+
+            break;
+        
+        // USB power removed from the connector
         case APP_USBD_EVT_POWER_REMOVED:
-            USB_CDC_DBG_PRINT("USB_CDC: USB power removed");
+           
+            // Stop USB device
             app_usbd_stop();
 
+            // Clear port open flag
             gb_is_port_open = false;
+
+            // Raise callback
+            usb_cdc_unplugged_cb();
+            
+            // Debug
+            USB_CDC_DBG_PRINT("USB_CDC: USB power removed");
+            
             break;
 
+        // 	From the power point of view USB is ready for working
         case APP_USBD_EVT_POWER_READY:
-            USB_CDC_DBG_PRINT("USB_CDC: USB ready");
+            
+            // Start USB device
             app_usbd_start();
+
+            // Debug
+            USB_CDC_DBG_PRINT("USB_CDC: USB ready");
+
             break;
 
         default:
+            // No actions...
             break;
     }
 }

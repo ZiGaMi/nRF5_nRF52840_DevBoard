@@ -362,6 +362,26 @@ static void app_update_adc_pars(void)
 }
 
 
+void usb_cdc_plugged_cb(void)
+{
+    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+}
+
+void usb_cdc_unplugged_cb(void)
+{
+    led_set( eLED_3, eLED_OFF );
+}
+
+void usb_cdc_port_open_cb(void)
+{
+    led_set( eLED_3, eLED_ON );
+}
+
+void usb_cdc_port_close_cb(void)
+{
+    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
 * @} <!-- END GROUP -->
