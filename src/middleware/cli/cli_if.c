@@ -28,11 +28,11 @@
 
 // USER CODE BEGIN...
 
-
+// Communication driver
 #include "drivers/peripheral/uart/uart_dbg.h"
 
+// For reset
 #include "nrf_nvic.h"
-
 
 // USER CODE END...
 

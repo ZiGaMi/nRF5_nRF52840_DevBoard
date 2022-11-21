@@ -73,6 +73,14 @@ static const par_cfg_t g_par_table[ePAR_NUM_OF] =
 	[ePAR_BTN_3]		= 	{	.id = 2, 	.name = "User button 3",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 3. 0-idle | 1-pressed"		},
 	[ePAR_BTN_4]		= 	{	.id = 3, 	.name = "User button 4",	.min.u8 = 0 ,		.max.u8 = 1,			.def.u8 = 0	,			.unit = NULL,		.type = ePAR_TYPE_U8,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "State of user button 4. 0-idle | 1-pressed"		},
 
+	[ePAR_AIN_1]		= 	{	.id = 10, 	.name = "AIN1 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.03 on nRF52840 DK "	},
+	[ePAR_AIN_2]		= 	{	.id = 11, 	.name = "AIN2 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.04 on nRF52840 DK "	},
+	[ePAR_AIN_4]		= 	{	.id = 12, 	.name = "AIN4 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.28 on nRF52840 DK "	},
+	[ePAR_AIN_5]		= 	{	.id = 13, 	.name = "AIN5 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.29 on nRF52840 DK "	},
+	[ePAR_AIN_6]		= 	{	.id = 14, 	.name = "AIN6 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.30 on nRF52840 DK "	},
+	[ePAR_AIN_7]		= 	{	.id = 15, 	.name = "AIN7 raw value",	.min.u16 = 0 ,		.max.u16 = UINT16_MAX,	.def.u16 = 0,			.unit = NULL,		.type = ePAR_TYPE_U16,	.access = ePAR_ACCESS_RO, 	.persistant = false,	.desc = "Raw analog value from pin P0.31 on nRF52840 DK "	},
+
+
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
