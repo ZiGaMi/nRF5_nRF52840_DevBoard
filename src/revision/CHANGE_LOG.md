@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project/module adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## V1.1.0 - xx.11.2022
+
+### Added
+ - Implementation of USB CDC class driver
+ - Led behaviour:
+  - LED1: Heartbeat 1Hz
+  - LED2: No used...
+  - LED3: USB CDC Status, OFF USB un-plugged, 1x blink USB plugged, ON USB VCP open
+  - LED4: Blinks on any button press
+
+
+### Memory usage:
+ - RAM: 20.8kB/256kB (8.1%)
+ - FLASH: 84.8kB/1024kB (8.2%)
+
+---
 ## V1.0.0 - 02.11.2022
 
 ### Added
