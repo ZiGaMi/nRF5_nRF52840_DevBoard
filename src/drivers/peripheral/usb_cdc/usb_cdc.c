@@ -95,7 +95,6 @@
  *	Unit: byte
  */                     
 #define USB_CDC_RX_BUF_SIZE                 ( 512 )  
-#define USB_CDC_TX_BUF_SIZE                 ( 512 )  
 
 
 
@@ -109,8 +108,6 @@
 
 
 
-static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                    app_usbd_cdc_acm_user_event_t event);
 
 #define CDC_ACM_COMM_INTERFACE  0
 #define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
@@ -120,18 +117,6 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 #define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
 
-/**
- * @brief CDC_ACM class instance
- * */
-APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
-                            cdc_acm_user_ev_handler,
-                            CDC_ACM_COMM_INTERFACE,
-                            CDC_ACM_DATA_INTERFACE,
-                            CDC_ACM_COMM_EPIN,
-                            CDC_ACM_DATA_EPIN,
-                            CDC_ACM_DATA_EPOUT,
-                            APP_USBD_CDC_COMM_PROTOCOL_AT_V250
-);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +137,6 @@ static uint8_t gu8_usb_cdc_rx_buf = 0;
  * 	USB CDC Tx/Rx buffer space
  */
 static uint8_t gu8_usb_cdc_rx_buffer[USB_CDC_RX_BUF_SIZE] = {0};
-static uint8_t gu8_usb_cdc_tx_buffer[USB_CDC_TX_BUF_SIZE] = {0};
 
 /**
  * 	USB CDC Rx buffer
@@ -163,15 +147,6 @@ const ring_buffer_attr_t 	g_rx_buffer_attr  = { 	.name 		= "USB CDC Rx Buf",
 													.override 	= false,
 													.p_mem 		= &gu8_usb_cdc_rx_buffer };
 
-/**
- * 	USB CDC Tx buffer
- */
-static p_ring_buffer_t 		g_tx_buffer = NULL;
-const ring_buffer_attr_t 	g_tx_buffer_attr  = { 	.name 		= "USB CDC Tx Buf",
-													.item_size 	= 1,
-													.override 	= false,
-													.p_mem 		= &gu8_usb_cdc_tx_buffer };
-
 
 static volatile bool gb_tx_in_progress = false;
 static volatile bool gb_is_port_open = false;
@@ -180,8 +155,9 @@ static volatile bool gb_is_port_open = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static usb_cdc_status_t usb_cdc_init_buffers(void);
-static void usbd_user_ev_handler(app_usbd_event_type_t event);
+static usb_cdc_status_t usb_cdc_init_buffers        (void);
+static void             usb_cdc_event_cdc_hndl      (app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event);
+static void             usbd_user_ev_handler        (app_usbd_event_type_t event);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,15 +165,29 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event);
 ////////////////////////////////////////////////////////////////////////////////
 
 
+/**
+ * 	Create USB CDC Handler
+ */
+APP_USBD_CDC_ACM_GLOBAL_DEF(    gh_usb_cdc, 
+                                usb_cdc_event_cdc_hndl,
+                                CDC_ACM_COMM_INTERFACE,
+                                CDC_ACM_DATA_INTERFACE,
+                                CDC_ACM_COMM_EPIN,
+                                CDC_ACM_DATA_EPIN,
+                                CDC_ACM_DATA_EPOUT,
+                                APP_USBD_CDC_COMM_PROTOCOL_AT_V250 );
+
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize USB  buffers
+*
+* @return 		status	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static usb_cdc_status_t usb_cdc_init_buffers(void)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
-
-	// Init Tx buffer
-	if ( eRING_BUFFER_OK != ring_buffer_init( &g_tx_buffer, USB_CDC_TX_BUF_SIZE, &g_tx_buffer_attr ))
-	{
-		status = eUSB_CDC_ERROR;
-	}
 
 	// Init Rx buffer
 	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buffer, USB_CDC_RX_BUF_SIZE, &g_rx_buffer_attr ))
@@ -257,14 +247,14 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		USB CDC User event handler @ref app_usbd_cdc_acm_user_ev_handler_t
+*		USB CDC class event handler @ref app_usbd_cdc_acm_user_ev_handler_t
 *
 * @param[in]    p_inst  - USB Device class instance
 * @param[in]    event   - Event that raise handler
 * @return 		void
 */
 ////////////////////////////////////////////////////////////////////////////////
-static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
+static void usb_cdc_event_cdc_hndl(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
 {
     switch ( event )
     {
@@ -272,7 +262,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_us
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
         {
 			// Dummy read
-			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
+			app_usbd_cdc_acm_read( &gh_usb_cdc, &gu8_usb_cdc_rx_buf, 1 );
 
             // Raise port open flag
 			gb_is_port_open = true;
@@ -324,7 +314,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_us
 					// TODO: handle error
 				}
 
-			} while ( NRF_SUCCESS == app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 ));
+			} while ( NRF_SUCCESS == app_usbd_cdc_acm_read( &gh_usb_cdc, &gu8_usb_cdc_rx_buf, 1 ));
 
             break;
         
@@ -389,7 +379,7 @@ usb_cdc_status_t usb_cdc_init(void)
 	    app_usbd_init(&usbd_config);
 
 
-	    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get( &m_app_cdc_acm );
+	    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get( &gh_usb_cdc );
 
 	    app_usbd_class_append(class_cdc_acm);
 
@@ -467,7 +457,7 @@ usb_cdc_status_t usb_cdc_write(const char* str)
     		gb_tx_in_progress = true;
 
             // Start transmission
-    		app_usbd_cdc_acm_write( &m_app_cdc_acm, str, strlen(str));
+    		app_usbd_cdc_acm_write( &gh_usb_cdc, str, strlen(str));
 
             /*
              *  Wait until transmission is over, where "APP_USBD_CDC_ACM_USER_EVT_TX_DONE" event is
