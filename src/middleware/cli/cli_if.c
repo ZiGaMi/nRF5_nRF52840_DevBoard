@@ -28,12 +28,11 @@
 
 // USER CODE BEGIN...
 
-
+// Communication driver
 #include "drivers/peripheral/uart/uart_dbg.h"
 
+// For reset
 #include "nrf_nvic.h"
-
-#include "drivers/peripheral/usb_cdc/usb_cdc.h"
 
 // USER CODE END...
 
@@ -77,16 +76,10 @@ cli_status_t cli_if_init(void)
 
 	// USER CODE BEGIN...
 
-	/*if ( eUART_DBG_OK != uart_dbg_init())
-	{
-		status = eCLI_ERROR_INIT;
-	}*/
-
-	if ( eUSB_CDC_OK != usb_cdc_init())
+	if ( eUART_DBG_OK != uart_dbg_init())
 	{
 		status = eCLI_ERROR_INIT;
 	}
-
 
 	// USER CODE END...
 
@@ -126,12 +119,7 @@ cli_status_t cli_if_receive(uint8_t * const p_data)
 
 	// USER CODE BEGIN...
 
-	/*if ( eUART_DBG_OK != uart_dbg_get((char*) p_data))
-	{
-		status = eCLI_ERROR;
-	}*/
-
-	if ( eUSB_CDC_OK != usb_cdc_get((char*) p_data))
+	if ( eUART_DBG_OK != uart_dbg_get((char*) p_data))
 	{
 		status = eCLI_ERROR;
 	}
@@ -155,12 +143,7 @@ cli_status_t cli_if_transmit(const uint8_t * const p_data)
 
 	// USER CODE BEGIN...
 
-	/*if ( eUART_DBG_OK != uart_dbg_write((const char*) p_data))
-	{
-		status = eCLI_ERROR;
-	}*/
-
-	if ( eUSB_CDC_OK != usb_cdc_write((const char*) p_data))
+	if ( eUART_DBG_OK != uart_dbg_write((const char*) p_data))
 	{
 		status = eCLI_ERROR;
 	}
