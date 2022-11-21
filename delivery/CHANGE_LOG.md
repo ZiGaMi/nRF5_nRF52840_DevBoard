@@ -10,10 +10,10 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
 ### Added
  - Implementation of USB CDC class driver
  - Led behaviour:
-  - LED1: Heartbeat 1Hz
-  - LED2: No used...
-  - LED3: USB CDC Status, OFF USB un-plugged, 1x blink USB plugged, ON USB VCP open
-  - LED4: Blinks on any button press
+    + LED1: Heartbeat 1Hz
+    + LED2: No used...
+    + LED3: USB CDC Status, OFF USB un-plugged, 1x blink USB plugged, ON USB VCP open
+    + LED4: Blinks on any button press
 
 ### Changed
  - CLI submodule updated
