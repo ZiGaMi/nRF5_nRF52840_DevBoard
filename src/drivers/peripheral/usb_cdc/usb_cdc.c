@@ -27,6 +27,7 @@
 #include "usb_cdc.h"
 #include "project_config.h"
 #include "middleware/ring_buffer/src/ring_buffer.h"
+#include "drivers/peripheral/systick/systick.h"
 
 // Debug communication port
 #include "middleware/cli/cli/src/cli.h"
@@ -93,6 +94,27 @@
  *	Unit: byte
  */                     
 #define USB_CDC_RX_BUF_SIZE                 ( 512 )  
+
+/**
+ *      USB Clock Startup Timeout time 
+ *
+ *  Unit: ms
+ */
+#define USB_CDC_CLOCK_START_TIMOUT_MS       ( 10UL )
+
+/**
+ *      USB Transmission Timeout time
+ *
+ *  Unit: ms
+ */
+#define USB_CDC_TX_TIMOUT_MS                ( 10UL )
+
+/**
+ *      USB Event handler Timeout time
+ *
+ *  Unit: ms
+ */
+#define USB_CDC_EVENT_HNDL_TIMOUT_MS        ( 10UL )
 
 /**
  *  USB CDC Class settings
@@ -343,7 +365,8 @@ static void usb_cdc_event_cdc_hndl(app_usbd_class_inst_t const * p_inst, app_usb
 				}
 				else
 				{
-					// TODO: handle error
+                    USB_CDC_DBG_PRINT( "USB_CDC: Error Rx buffer full! " );
+					USB_CDC_ASSERT( 0 );
 				}
 
 			} while ( NRF_SUCCESS == app_usbd_cdc_acm_read( &gh_usb_cdc, &gu8_usb_cdc_rx_buf, 1 ));
@@ -352,6 +375,7 @@ static void usb_cdc_event_cdc_hndl(app_usbd_class_inst_t const * p_inst, app_usb
         
 
         default:
+            // No actions...
             break;
     }
 }
@@ -397,10 +421,22 @@ usb_cdc_status_t usb_cdc_init(void)
         // Request low frequency clock
 	    nrf_drv_clock_lfclk_request(NULL);
 
+        // Get current time
+        const uint32_t timestamp_start = systick_get_ms();
+
         // Wait for low frequency clock to start
 	    while( !nrf_drv_clock_lfclk_is_running() )
 	    {
-	        // TODO: Implement timeout !
+            // Check for timeout
+	        if (((uint32_t) ( systick_get_ms() - timestamp_start )) > USB_CDC_CLOCK_START_TIMOUT_MS )
+            {
+                status = eUSB_CDC_ERROR;
+                
+                USB_CDC_DBG_PRINT( "USB_CDC: Waiting for clock start timeouted! " );
+                USB_CDC_ASSERT( 0 );
+
+                break;
+            }
 	    }
 
         // Generate a standard USB serial number that is unique for each device
@@ -443,10 +479,22 @@ usb_cdc_status_t usb_cdc_hndl(void)
 
 	if ( true == gb_is_init )
 	{   
+        // Get current time
+        const uint32_t timestamp_start = systick_get_ms();
+
         // Process USB events
 		while ( app_usbd_event_queue_process() )
 		{
-            // TODO: Implement timeout...
+            // Check for timeout
+	        if (((uint32_t) ( systick_get_ms() - timestamp_start )) > USB_CDC_EVENT_HNDL_TIMOUT_MS )
+            {
+                status = eUSB_CDC_ERROR;
+                
+                USB_CDC_DBG_PRINT( "USB_CDC: Event handling timeouted! " );
+                USB_CDC_ASSERT( 0 );
+
+                break;
+            }
 		}
 	}
     else
@@ -486,6 +534,9 @@ usb_cdc_status_t usb_cdc_write(const char* str)
             // Start transmission
     		app_usbd_cdc_acm_write( &gh_usb_cdc, str, strlen(str));
 
+            // Get current time
+            const uint32_t timestamp_start = systick_get_ms();
+
             /*
              *  Wait until transmission is over, where "APP_USBD_CDC_ACM_USER_EVT_TX_DONE" event is
              *  raised.
@@ -496,7 +547,16 @@ usb_cdc_status_t usb_cdc_write(const char* str)
     		while   (   ( true == gb_tx_in_progress )
                     &&  ( true == gb_is_port_open ))
     		{
-    			// TODO: Implement timeout...
+                // Check for timeout
+    	        if (((uint32_t) ( systick_get_ms() - timestamp_start )) > USB_CDC_TX_TIMOUT_MS )
+                {
+                    status = eUSB_CDC_ERROR;
+                
+                    USB_CDC_DBG_PRINT( "USB_CDC: Waiting for tx done timeouted! " );
+                    USB_CDC_ASSERT( 0 );
+
+                    break;
+                }
 
                 // Handle events
     			usb_cdc_hndl();
