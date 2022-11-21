@@ -204,6 +204,8 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         case APP_USBD_EVT_POWER_REMOVED:
             //NRF_LOG_INFO("USB power removed");
             app_usbd_stop();
+
+            gb_is_port_open = false;
             break;
 
         case APP_USBD_EVT_POWER_READY:
@@ -429,7 +431,7 @@ usb_cdc_status_t usb_cdc_write	(const char* str)
 
 		app_usbd_cdc_acm_write( &m_app_cdc_acm, str, strlen(str));
 
-		while ( true == gb_tx_in_progress )
+		while ( true == gb_tx_in_progress && true == gb_is_port_open )
 		{
 			// TODO: Implement timeout...
 
