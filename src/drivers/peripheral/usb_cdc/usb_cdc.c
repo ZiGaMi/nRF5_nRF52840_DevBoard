@@ -28,6 +28,9 @@
 #include "project_config.h"
 #include "middleware/ring_buffer/src/ring_buffer.h"
 
+// Debug communication port
+#include "middleware/cli/cli/src/cli.h"
+
 #include "nrf_drv_usbd.h"
 #include "nrf_drv_clock.h"
 
@@ -47,27 +50,61 @@
 
 
 /**
- *		USB CDC asserts
+ * 	Enable/Disable debug mode
+ *
+ * 	@note	Disable in release!
  */
- #define USB_CDC_ASSERT_EN				( 1 )
+#define USB_CDC_DEBUG_EN                    ( 0 )
+
+#ifndef DEBUG
+    #undef USB_CDC_DEBUG_EN
+    #define USB_CDC_DEBUG_EN 0
+#endif
+
+/**
+ * 	Debug communication port macros
+ */
+#if ( 1 == USB_CDC_DEBUG_EN )
+	#define USB_CDC_DBG_PRINT( ... )        ( cli_printf( __VA_ARGS__ ))
+#else
+	#define USB_CDC_DBG_PRINT( ... )        { ; }
+
+#endif
+
+/**
+ *		USB CDC asserts
+ *
+ * 	@note	Disable in release!
+ */
+ #define USB_CDC_ASSERT_EN                  ( 1 )
 
  #if ( USB_CDC_ASSERT_EN )
-	#define USB_CDC_ASSERT(x)			{ PROJECT_CONFIG_ASSERT(x) }
+	#define USB_CDC_ASSERT(x)               { PROJECT_CONFIG_ASSERT(x) }
  #else
-  #define USB_CDC_ASSERT)				{ ; }
+  #define USB_CDC_ASSERT)                   { ; }
  #endif
+
+ #ifndef DEBUG
+    #undef USB_CDC_ASSERT_EN
+    #define USB_CDC_ASSERT_EN 0
+#endif
 
 /**
  *		USB CDC buffer size
  *
  *	Unit: byte
  */                     
-#define USB_CDC_RX_BUF_SIZE			( 1024 )  
-#define USB_CDC_TX_BUF_SIZE			( 1024 )  
+#define USB_CDC_RX_BUF_SIZE                 ( 512 )  
+#define USB_CDC_TX_BUF_SIZE                 ( 512 )  
+
+
 
 
 
  
+
+
+
 #define USBD_POWER_DETECTION true
 
 
@@ -193,7 +230,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             break;
 
         case APP_USBD_EVT_POWER_DETECTED:
-            //NRF_LOG_INFO("USB power detected");
+            USB_CDC_DBG_PRINT("USB_CDC: USB power detected");
 
             if (!nrf_drv_usbd_is_enabled())
             {
@@ -202,14 +239,14 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             break;
 
         case APP_USBD_EVT_POWER_REMOVED:
-            //NRF_LOG_INFO("USB power removed");
+            USB_CDC_DBG_PRINT("USB_CDC: USB power removed");
             app_usbd_stop();
 
             gb_is_port_open = false;
             break;
 
         case APP_USBD_EVT_POWER_READY:
-           // NRF_LOG_INFO("USB ready");
+            USB_CDC_DBG_PRINT("USB_CDC: USB ready");
             app_usbd_start();
             break;
 
@@ -218,66 +255,62 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 /**
- * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
- * */
-static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                    app_usbd_cdc_acm_user_event_t event)
+*		USB CDC User event handler @ref app_usbd_cdc_acm_user_ev_handler_t
+*
+* @param[in]    p_inst  - USB Device class instance
+* @param[in]    event   - Event that raise handler
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
 {
-    app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
-
-    switch (event)
+    switch ( event )
     {
+        // User event on port open
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
         {
-		
-           // bsp_board_led_on(LED_CDC_ACM_OPEN);
-
 			// Dummy read
 			app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 );
 
-			//gb_tx_in_progress = false;
-
+            // Raise port open flag
 			gb_is_port_open = true;
+
+            // Raise callback
+            usb_cdc_port_open_cb();
+
+            // Debug
+            USB_CDC_DBG_PRINT("USB_CDC: USB port open!");
 		
             break;
         }
 
+        // User event on port close
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
-            //bsp_board_led_off(LED_CDC_ACM_OPEN);
 
+            // Clear port open flag
 			gb_is_port_open = false;
+
+            // Raise callback
+            usb_cdc_port_close_cb();
+
+            // Debug
+            USB_CDC_DBG_PRINT("USB_CDC: USB port closed!");
+
             break;
 
+        // User event on transmission complete
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
-            //bsp_board_led_invert(LED_CDC_ACM_TX);
-			
+	
+            // Clear tx in progress flag
 			gb_tx_in_progress = false;
-
-			#if 0
-			uint8_t tx_data = 0;
-
-			// Send next char from tx buffer
-			if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer, &tx_data ))
-			{
-				app_usbd_cdc_acm_write( &m_app_cdc_acm, &tx_data, 1 );
-			}
-
-			// Tx fifo empty
-			else
-			{
-				gb_tx_in_progress = false;
-			}
-			#endif
 		
 			break;
 
+        // User event on reception complete
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
-        {
-           
-		   gpio_toggle( eGPIO_TP_1 );
-			
+        			
 			// Take all bytes from reception buffer
 			do
 			{
@@ -294,15 +327,12 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 			} while ( NRF_SUCCESS == app_usbd_cdc_acm_read( &m_app_cdc_acm, &gu8_usb_cdc_rx_buf, 1 ));
 
             break;
-        }
+        
+
         default:
             break;
     }
 }
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -414,83 +444,50 @@ usb_cdc_status_t usb_cdc_hndl(void)
 /**
 *		Transmit over USB CDC 
 *	
-* @note This function is non-blocking
+* @note This function is blocking
 *
-* @param[in] 	pc_string	- String to be send
-* @return 		status		- Status of operation
+* @param[in] 	str     - String to be send
+* @return 		status	- Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
-usb_cdc_status_t usb_cdc_write	(const char* str)
+usb_cdc_status_t usb_cdc_write(const char* str)
 {
 	usb_cdc_status_t status = eUSB_CDC_OK;
-
-	if ( true == gb_is_port_open )
-	{
-
-		gb_tx_in_progress = true;
-
-		app_usbd_cdc_acm_write( &m_app_cdc_acm, str, strlen(str));
-
-		while ( true == gb_tx_in_progress && true == gb_is_port_open )
-		{
-			// TODO: Implement timeout...
-
-			usb_cdc_hndl();
-		}
-	}
-
-	#if 0
-	uint8_t u8_data = 0;
-
+    
 	USB_CDC_ASSERT( true == gb_is_init );
 	USB_CDC_ASSERT( NULL != str );
 
-	if	(	( true == gb_is_init ) 
-		&&	( NULL != str ))
-	{
-		// Get lenght of string
-		const uint32_t str_len = strlen( str );
+    if  (   ( true == gb_is_init )
+        &&  ( NULL != str ))
+    {
+        // Is VCP open?
+    	if ( true == gb_is_port_open )
+    	{
+            // Raise tx in progress flag
+    		gb_tx_in_progress = true;
 
-		// Put all to fifo
-		for ( uint32_t ch = 0; ch < str_len; ch++ )
-		{
-			// Put char to tx buffer
-			if ( eRING_BUFFER_OK != ring_buffer_add( g_tx_buffer, (const char*) str ))
-			{
-				// TODO: handle error if not all data added
-				break;
-			}
+            // Start transmission
+    		app_usbd_cdc_acm_write( &m_app_cdc_acm, str, strlen(str));
 
-			// Move thru string
-			str++;
-		}
+            /*
+             *  Wait until transmission is over, where "APP_USBD_CDC_ACM_USER_EVT_TX_DONE" event is
+             *  raised.
+             * 
+             *  Check also if port is still open as it might happend that during transmission USB 
+             *  cable is removed!
+             */
+    		while ( true == gb_tx_in_progress && true == gb_is_port_open )
+    		{
+    			// TODO: Implement timeout...
 
-        // The new byte has been added to FIFO. It will be picked up from there
-        // (in 'uart_event_handler') when all preceding bytes are transmitted.
-        // But if UART is not transmitting anything at the moment, we must start
-        // a new transmission here.
-        //if ( false == nrf_drv_uart_tx_in_progress( &gh_uart1_handler ))
-		if ( false == gb_tx_in_progress )
-        {
-            // This operation should be almost always successful, since we've
-            // just added a byte to FIFO, but if some bigger delay occurred
-            // (some heavy interrupt handler routine has been executed) since
-            // that time, FIFO might be empty already.
-
-			gb_tx_in_progress = true;
-            
-			// Start trasmission by sending first char from fifo
-			if ( eRING_BUFFER_OK == ring_buffer_get( g_tx_buffer, &u8_data ))
-			{
-				app_usbd_cdc_acm_write( &m_app_cdc_acm, &u8_data, 1 );
-			}
-        }	
-	}
-	else
-	{
-		status = eUSB_CDC_ERROR;
-	}
-	#endif
+    			usb_cdc_hndl();
+    		}
+    	}
+    }
+    else
+    {
+        status = eUSB_CDC_ERROR;
+    }
 
 	return status;
 }
@@ -527,6 +524,62 @@ usb_cdc_status_t usb_cdc_get(char * const p_char)
 	}
 	
 	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		USB cable plugged event callback 
+*
+* @return 	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void usb_cdc_plugged_cb(void)
+{
+	/**
+	 * 	Leave empty for user application purposes...
+	 */
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		USB cable un-plugged event callback 
+*
+* @return 	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void usb_cdc_unplugged_cb(void)
+{
+	/**
+	 * 	Leave empty for user application purposes...
+	 */
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		USB port open event callback 
+*
+* @return 	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void usb_cdc_port_open_cb(void)
+{
+	/**
+	 * 	Leave empty for user application purposes...
+	 */
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		USB port close event callback 
+*
+* @return 	void
+*/
+////////////////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void usb_cdc_port_close_cb(void)
+{
+	/**
+	 * 	Leave empty for user application purposes...
+	 */
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -124,6 +124,12 @@ void app_init(void)
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
+/*    if ( eUSB_CDC_OK != usb_cdc_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "USB CDC init error!" );
+		PROJECT_CONFIG_ASSERT( 0 );
+    }
+*/
 
 	if ( eUART_OK != uart_1_init())
 	{

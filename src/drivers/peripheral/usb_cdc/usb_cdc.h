@@ -50,6 +50,10 @@ usb_cdc_status_t usb_cdc_hndl	(void);
 usb_cdc_status_t usb_cdc_write	(const char* str);
 usb_cdc_status_t usb_cdc_get	(char * const p_char);
 
+void usb_cdc_plugged_cb         (void);
+void usb_cdc_unplugged_cb       (void);
+void usb_cdc_port_open_cb       (void);
+void usb_cdc_port_close_cb      (void);
 
 #endif // __USC_CDC_H
 

@@ -77,11 +77,11 @@ cli_status_t cli_if_init(void)
 
 	// USER CODE BEGIN...
 
-/*	if ( eUART_DBG_OK != uart_dbg_init())
+	/*if ( eUART_DBG_OK != uart_dbg_init())
 	{
 		status = eCLI_ERROR_INIT;
-	}
-*/
+	}*/
+
 	if ( eUSB_CDC_OK != usb_cdc_init())
 	{
 		status = eCLI_ERROR_INIT;
