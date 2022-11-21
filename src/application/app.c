@@ -22,8 +22,10 @@
 #include "project_config.h"
 #include "pin_mapper.h"
 
-
-#include "gpio.h"
+// Drivers
+#include "drivers/peripheral/gpio/gpio.h"
+#include "drivers/peripheral/uart/uart.h"
+#include "drivers/peripheral/usb_cdc/usb_cdc.h"
 
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
@@ -34,20 +36,10 @@
 #include "middleware/cli/cli/src/cli.h"
 #include "middleware/parameters/parameters/src/par.h"
 
-#include "uart.h"
-
-
-#include "nrf_drv_saadc.h"
-#include "nrf_drv_timer.h"
-#include "nrf_drv_ppi.h"
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -132,6 +124,12 @@ void app_init(void)
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
 
+/*    if ( eUSB_CDC_OK != usb_cdc_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "USB CDC init error!" );
+		PROJECT_CONFIG_ASSERT( 0 );
+    }
+*/
 
 	if ( eUART_OK != uart_1_init())
 	{
@@ -158,6 +156,9 @@ void app_hndl_10ms(void)
 
 	// Update ADC raw values
 	app_update_adc_pars();
+
+	// Handle USB CDC
+	usb_cdc_hndl();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -360,6 +361,26 @@ static void app_update_adc_pars(void)
 	par_set( ePAR_AIN_7, (uint16_t*) &adc_val );
 }
 
+
+void usb_cdc_plugged_cb(void)
+{
+    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+}
+
+void usb_cdc_unplugged_cb(void)
+{
+    led_set( eLED_3, eLED_OFF );
+}
+
+void usb_cdc_port_open_cb(void)
+{
+    led_set( eLED_3, eLED_ON );
+}
+
+void usb_cdc_port_close_cb(void)
+{
+    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
