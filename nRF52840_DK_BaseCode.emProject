@@ -128,6 +128,10 @@
           <file file_name="src/drivers/peripheral/usb_cdc/usb_cdc.c" />
           <file file_name="src/drivers/peripheral/usb_cdc/usb_cdc.h" />
         </folder>
+        <folder Name="timer">
+          <file file_name="src/drivers/peripheral/timer/timer.c" />
+          <file file_name="src/drivers/peripheral/timer/timer.h" />
+        </folder>
       </folder>
       <folder Name="hmi">
         <folder Name="button">
