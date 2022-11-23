@@ -230,12 +230,32 @@ timer_status_t timer_init(void)
             gb_is_init = true;
         }
     }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get init status
+*
+* @param[out]   p_is_init   - Initialization flag
+* @return 		status      - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+timer_status_t timer_is_init(bool * const p_is_init)
+{
+    timer_status_t status = eTIMER_OK;
+
+    if ( NULL != p_is_init )
+    {
+        *p_is_init = gb_is_init;
+    }
     else
     {
         status = eTIMER_ERROR;
     }
 
-    return status;
+    return status;   
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -26,6 +26,7 @@
 #include "drivers/peripheral/gpio/gpio.h"
 #include "drivers/peripheral/uart/uart.h"
 #include "drivers/peripheral/usb_cdc/usb_cdc.h"
+#include "drivers/peripheral/timer/timer.h"
 
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
@@ -76,6 +77,7 @@ void app_init(void)
 {
     // Init periphery
     gpio_init();
+    timer_init();
 
     // Init Cli
     if ( eCLI_OK != cli_init())
@@ -98,8 +100,19 @@ void app_init(void)
     }
     else
     {
+        led_fade_cfg_t led_cfg = 
+        { 
+            .fade_in_time   = 0.2f,
+            .fade_out_time  = 0.2f,
+            .max_duty       = 1.0f,
+        };
+        led_set_fade_cfg( eLED_1, &led_cfg ); 
+        led_set_fade_cfg( eLED_2, &led_cfg ); 
+        led_set_fade_cfg( eLED_3, &led_cfg ); 
+        led_set_fade_cfg( eLED_4, &led_cfg ); 
+
         // Hearthbeat
-        led_blink( eLED_1, 1.0f, 2.0f, eLED_BLINK_CONTINUOUS );
+        led_blink_smooth( eLED_1, 1.0f, 2.0f, eLED_BLINK_CONTINUOUS );
     }
 
     // Init buttons
