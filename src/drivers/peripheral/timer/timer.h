@@ -3,23 +3,21 @@
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@file      gpio.h
-*@brief     GPIO
+*@file      timer.h
+*@brief     Timer low level driver
 *@author    Ziga Miklosic
-*@date      22.10.2022
+*@date      23.11.2022
 *@version   V1.0.0  (nRF5)
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*@addtogroup GPIO
+*@addtogroup TIMER
 * @{ <!-- BEGIN GROUP -->
-*
-* 	GPIO manipulations
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GPIO_H
-#define __GPIO_H
+#ifndef __TIMER_H
+#define __TIMER_H
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
@@ -33,59 +31,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * 	GPIO status
+ * 	Timer status
  */
 typedef enum
 {
-    eGPIO_OK = 0,	/**<Normal operation */
-    eGPIO_ERROR,	/**<General error code */
-} gpio_status_t;
+    eTIMER_OK = 0,	/**<Normal operation */
+    eTIMER_ERROR,	/**<General error code */
+} timer_status_t;
 
 /**
- *  GPIO pins
+ * 	Timer channels
  */
 typedef enum
 {
-    // Outputs
-    eGPIO_LED_1 = 0,
-    eGPIO_LED_2,
-    eGPIO_LED_3,
-    eGPIO_LED_4,
+	eTIMER_PWM0_CH1 = 0,
+    eTIMER_PWM0_CH2,
+    eTIMER_PWM0_CH3,
+    eTIMER_PWM0_CH4,
 
-    //eGPIO_TP_1,
-    //eGPIO_TP_2,
-    //eGPIO_TP_3,
-
-    // Inputs
-    eGPIO_BTN_1,
-    eGPIO_BTN_2,
-    eGPIO_BTN_3,
-    eGPIO_BTN_4,
-
-    eGPIO_NUM_OF
-} gpio_pins_t;
+	eTIMER_CH_NUM_OF,
+} timer_ch_t;
 
 /**
- * 	GPIO state
+ *     32-bit floating point definition
  */
-typedef enum
-{
-    eGPIO_LOW = 0,      /**<Logic low state */
-    eGPIO_HIGH,		/**<Logic high state */
-    eGPIO_UKNOWN,	/**<Uknown state - during startup time */
-} gpio_state_t;
+typedef float float32_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-gpio_status_t 	gpio_init	(void);
-gpio_status_t	gpio_is_init	(bool * const p_is_init);
-gpio_state_t	gpio_get	(const gpio_pins_t pin);
-void		gpio_set	(const gpio_pins_t pin, const gpio_state_t state);
-void		gpio_toggle	(const gpio_pins_t pin);
+timer_status_t 	timer_init			(void);
+timer_status_t 	timer_is_init		(bool * const p_is_init);
+timer_status_t 	timer_set_pwm		(const timer_ch_t ch, const float32_t duty);
 
-
-#endif // __GPIO_H
+#endif // __TIMER_H
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

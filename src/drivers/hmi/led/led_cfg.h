@@ -82,12 +82,12 @@ typedef enum
 /**
  * 	Using timer for driving LED
  */
-#define LED_CFG_TIMER_USE_EN					( 0 )
+#define LED_CFG_TIMER_USE_EN					( 1 )
 
 /**
  * 	Using GPIO for driving LED
  */
-#define LED_CFG_GPIO_USE_EN						( 1 )
+#define LED_CFG_GPIO_USE_EN						( 0 )
 
 /**
  * 	Enable/Disable debug mode

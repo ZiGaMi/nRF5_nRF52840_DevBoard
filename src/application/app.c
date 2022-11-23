@@ -26,6 +26,7 @@
 #include "drivers/peripheral/gpio/gpio.h"
 #include "drivers/peripheral/uart/uart.h"
 #include "drivers/peripheral/usb_cdc/usb_cdc.h"
+#include "drivers/peripheral/timer/timer.h"
 
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
@@ -44,6 +45,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
+static void app_led_fade_setup  (void);
 static void app_btn_1_pressed	(void);
 static void app_btn_1_released	(void);
 static void app_btn_2_pressed	(void);
@@ -76,6 +78,7 @@ void app_init(void)
 {
     // Init periphery
     gpio_init();
+    timer_init();
 
     // Init Cli
     if ( eCLI_OK != cli_init())
@@ -98,8 +101,11 @@ void app_init(void)
     }
     else
     {
+        // Change led configs
+        app_led_fade_setup();
+
         // Hearthbeat
-        led_blink( eLED_1, 1.0f, 2.0f, eLED_BLINK_CONTINUOUS );
+        led_blink_smooth( eLED_1, 1.0f, 2.0f, eLED_BLINK_CONTINUOUS );
     }
 
     // Init buttons
@@ -182,6 +188,27 @@ void app_hndl_100ms(void)
 void app_hndl_1000ms(void)
 {
     // Further actions here...
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*     Setup LED fade configs
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void app_led_fade_setup(void)
+{
+     led_fade_cfg_t led_cfg = 
+    { 
+        .fade_in_time   = 0.1f,
+        .fade_out_time  = 0.1f,
+        .max_duty       = 1.0f,
+    };
+    led_set_fade_cfg( eLED_1, &led_cfg ); 
+    led_set_fade_cfg( eLED_2, &led_cfg ); 
+    led_set_fade_cfg( eLED_3, &led_cfg ); 
+    led_set_fade_cfg( eLED_4, &led_cfg );    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -360,25 +387,52 @@ static void app_update_adc_pars(void)
 	par_set( ePAR_AIN_7, (uint16_t*) &adc_val );
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       USB CDC plugged in event callback
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void usb_cdc_plugged_cb(void)
 {
-    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+    led_blink_smooth( eLED_3, 0.20f, 0.50f, eLED_BLINK_CONTINUOUS );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       USB CDC unplugged event callback
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void usb_cdc_unplugged_cb(void)
 {
-    led_set( eLED_3, eLED_OFF );
+    led_set_smooth( eLED_3, eLED_OFF );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       USB CDC Virtual COM port open event callback
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void usb_cdc_port_open_cb(void)
 {
-    led_set( eLED_3, eLED_ON );
+    led_set_smooth( eLED_3, eLED_ON );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       USB CDC Virtual COM port close event callback
+*
+* @return   void
+*/
+////////////////////////////////////////////////////////////////////////////////
 void usb_cdc_port_close_cb(void)
 {
-    led_blink( eLED_3, 0.10f, 0.50f, eLED_BLINK_CONTINUOUS );
+    led_blink_smooth( eLED_3, 0.20f, 0.50f, eLED_BLINK_CONTINUOUS );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
