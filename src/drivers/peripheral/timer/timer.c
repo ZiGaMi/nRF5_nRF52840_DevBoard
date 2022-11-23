@@ -54,25 +54,6 @@
  */
 #define TIMER_PWM0_PERIOD           ((uint16_t)( TIMER_PWM0_BASE_FREQ_HZ / TIMER_PWM0_FREQ_HZ ))
 
-
-#if 0
-typedef struct
-{
-    nrf_drv_pwm_t *     p_tim;          /**<Timer instance */
-    float32_t           freq;           /**<Base frequency of timer */
-    nrf_pwm_mode_t      mode;           /**<Counter mode */
-} timer_tim_t;
-
-typedef enum
-{
-    eTIMER_CH1 = 0,
-    eTIMER_CH2,
-    eTIMER_CH3,
-    eTIMER_CH4
-} timer_ch_opt_t;
-#endif
-
-
 /**
  * 	Timer configuration table structure
  */
@@ -82,7 +63,6 @@ typedef struct
     uint32_t        pin;    	/**<Pin */
 	nrf_drv_pwm_t * p_tim;      /**<Pointer to timer handler */
 } timer_tim_ch_t;
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -150,10 +130,13 @@ static timer_status_t timer_pwm0_init(void);
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize PWM0 timer instance
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 static timer_status_t timer_pwm0_init(void)
 {
     timer_status_t status = eTIMER_OK;
@@ -166,7 +149,9 @@ static timer_status_t timer_pwm0_init(void)
             NRF_GPIO_PIN_MAP( g_timer_cfg[eTIMER_PWM0_CH1].port, g_timer_cfg[eTIMER_PWM0_CH1].pin ),   
             NRF_GPIO_PIN_MAP( g_timer_cfg[eTIMER_PWM0_CH2].port, g_timer_cfg[eTIMER_PWM0_CH2].pin ),   
             NRF_GPIO_PIN_MAP( g_timer_cfg[eTIMER_PWM0_CH3].port, g_timer_cfg[eTIMER_PWM0_CH3].pin ),   
-            NRF_GPIO_PIN_MAP( g_timer_cfg[eTIMER_PWM0_CH4].port, g_timer_cfg[eTIMER_PWM0_CH4].pin ),   
+            NRF_GPIO_PIN_MAP( g_timer_cfg[eTIMER_PWM0_CH4].port, g_timer_cfg[eTIMER_PWM0_CH4].pin ),
+
+            // NOTE: In case some output pin is not in use set value to "NRF_DRV_PWM_PIN_NOT_USED"
         },
 
         .irq_priority   = APP_IRQ_PRIORITY_LOWEST,
@@ -188,10 +173,6 @@ static timer_status_t timer_pwm0_init(void)
 
     return status;  
 }
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /*!
