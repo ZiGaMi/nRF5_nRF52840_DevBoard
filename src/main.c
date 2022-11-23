@@ -46,7 +46,7 @@ static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
 static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
 
 
-
+/*
 nrf_drv_pwm_config_t const config0 = {
     .output_pins =
         {
@@ -63,7 +63,7 @@ nrf_drv_pwm_config_t const config0 = {
     .load_mode      = NRF_PWM_LOAD_INDIVIDUAL,
     .step_mode      = NRF_PWM_STEP_AUTO
 };
-
+*/
 
 #define PWM_NUM_OF_CH   4
 static volatile uint16_t u16_ch_val[PWM_NUM_OF_CH] = { 10, 20, 30, 50 };
@@ -101,6 +101,22 @@ int main(void)
     // Init application
     app_init();
 
+    nrf_drv_pwm_config_t config0 = {
+    .output_pins =
+        {
+            NRF_GPIO_PIN_MAP(0,15),   // P0.17 channel 0
+            13,   // P0.18 channel 1
+            NRF_GPIO_PIN_MAP(1,10),   // P0.19 channel 2
+            NRF_GPIO_PIN_MAP(1,11),   // P0.20 channel 3
+        },
+    .irq_priority   = APP_IRQ_PRIORITY_LOWEST,
+    .base_clock     = NRF_PWM_CLK_250kHz,
+    .count_mode     = NRF_PWM_MODE_UP,
+    .top_value      = 100,
+    //.load_mode      = NRF_PWM_LOAD_COMMON,
+    .load_mode      = NRF_PWM_LOAD_INDIVIDUAL,
+    .step_mode      = NRF_PWM_STEP_AUTO
+};
 
     if ( NRF_SUCCESS != nrf_drv_pwm_init( &m_pwm0, &config0, NULL ))
     {
