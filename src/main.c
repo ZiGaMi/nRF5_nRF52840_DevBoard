@@ -31,9 +31,43 @@
 // Periphery
 #include "systick.h"
 
+
+#include "nrf_gpio.h"
+#include "nrf_drv_pwm.h"
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+
+
+static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
+static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
+
+
+
+nrf_drv_pwm_config_t const config0 = {
+    .output_pins =
+        {
+            NRF_GPIO_PIN_MAP(0,15),   // P0.17 channel 0
+            13,   // P0.18 channel 1
+            NRF_GPIO_PIN_MAP(1,10),   // P0.19 channel 2
+            NRF_GPIO_PIN_MAP(1,11),   // P0.20 channel 3
+        },
+    .irq_priority   = APP_IRQ_PRIORITY_LOWEST,
+    .base_clock     = NRF_PWM_CLK_250kHz,
+    .count_mode     = NRF_PWM_MODE_UP,
+    .top_value      = 100,
+    //.load_mode      = NRF_PWM_LOAD_COMMON,
+    .load_mode      = NRF_PWM_LOAD_INDIVIDUAL,
+    .step_mode      = NRF_PWM_STEP_AUTO
+};
+
+
+#define PWM_NUM_OF_CH   4
+static volatile uint16_t u16_ch_val[PWM_NUM_OF_CH] = { 10, 20, 30, 50 };
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -66,6 +100,29 @@ int main(void)
 
     // Init application
     app_init();
+
+
+    if ( NRF_SUCCESS != nrf_drv_pwm_init( &m_pwm0, &config0, NULL ))
+    {
+        PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+
+
+    static nrf_pwm_sequence_t seq = 
+    {   
+        .values.p_individual = (nrf_pwm_values_individual_t*) &u16_ch_val,
+
+        .length             = PWM_NUM_OF_CH,    // Number of 16-bit values in the array pointed by @p values
+        .repeats            = 0,
+        .end_delay          = 0
+    };
+
+        
+    // NRFX_PWM_FLAG_LOOP
+
+    nrf_drv_pwm_simple_playback( &m_pwm0, &seq, 1, NRFX_PWM_FLAG_LOOP );
+
 
     // Main loop
     while ( 1 )
