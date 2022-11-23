@@ -32,6 +32,7 @@
 #include "systick.h"
 
 
+#include "timer.h"
 #include "nrf_gpio.h"
 #include "nrf_drv_pwm.h"
 
@@ -41,7 +42,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
+#if 0
 static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
 static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
 
@@ -67,7 +68,7 @@ nrf_drv_pwm_config_t const config0 = {
 
 #define PWM_NUM_OF_CH   4
 static volatile uint16_t u16_ch_val[PWM_NUM_OF_CH] = { 10, 20, 30, 50 };
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -101,6 +102,16 @@ int main(void)
     // Init application
     app_init();
 
+
+    timer_init();
+
+    timer_set_pwm( eTIMER_PWM0_CH1, 0.0f );
+    timer_set_pwm( eTIMER_PWM0_CH2, 0.25f );
+    timer_set_pwm( eTIMER_PWM0_CH3, 0.75f );
+    timer_set_pwm( eTIMER_PWM0_CH4, 1.0f );
+
+
+    #if 0
     nrf_drv_pwm_config_t config0 = {
     .output_pins =
         {
@@ -138,7 +149,7 @@ int main(void)
     // NRFX_PWM_FLAG_LOOP
 
     nrf_drv_pwm_simple_playback( &m_pwm0, &seq, 1, NRFX_PWM_FLAG_LOOP );
-
+    #endif 
 
     // Main loop
     while ( 1 )

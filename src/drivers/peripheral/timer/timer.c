@@ -33,11 +33,34 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *  Timer PWM0 PWM output frequency
+ *
+ *  Unit: Hz
+ */
+#define TIMER_PWM0_FREQ_HZ          ( 5000 )
+
+/**
+ *  Timer PWM0 Base frequency
+ *
+ * @note   Set this value based on Timer0 cfg ".base_clock"
+ *
+ *  Unit: Hz
+ */
+#define TIMER_PWM0_BASE_FREQ_HZ     ( 1000000UL )  
+
+/**
+ *      Calculate timer period
+ */
+#define TIMER_PWM0_PERIOD           ((uint16_t)( TIMER_PWM0_BASE_FREQ_HZ / TIMER_PWM0_FREQ_HZ ))
+
+
+#if 0
 typedef struct
 {
-    nrf_drv_pwm_t *     p_tim;      /**<Timer instance */
-    float32_t           freq;       /**<Base frequency of timer */
-    nrf_pwm_mode_t      mode;       /**<Counter mode */
+    nrf_drv_pwm_t *     p_tim;          /**<Timer instance */
+    float32_t           freq;           /**<Base frequency of timer */
+    nrf_pwm_mode_t      mode;           /**<Counter mode */
 } timer_tim_t;
 
 typedef enum
@@ -47,6 +70,8 @@ typedef enum
     eTIMER_CH3,
     eTIMER_CH4
 } timer_ch_opt_t;
+#endif
+
 
 /**
  * 	Timer configuration table structure
@@ -71,15 +96,26 @@ static bool gb_is_init = false;
 
 /**
  *  Compare register values
+ *
+ * @note    Must have static storage duration!
  */
 static volatile uint16_t gu16_compare_val[eTIMER_CH_NUM_OF] = {0};
 
 /**
- *  Timer instances
+ *  Timer PWM0 instance
  */
 static nrf_drv_pwm_t gh_timer_pwm_0 = NRF_DRV_PWM_INSTANCE(0);
 
-
+/**
+ *  Timer PWM0 Sequence
+ */
+static nrf_pwm_sequence_t g_pwm0_sequence = 
+{   
+    .values.p_individual    = (nrf_pwm_values_individual_t*) &gu16_compare_val,
+    .length                 = eTIMER_CH_NUM_OF, 
+    .repeats                = 0,
+    .end_delay              = 0
+};
 
 /**
  *  Timer configuraiton table
@@ -94,7 +130,7 @@ static const timer_tim_ch_t g_timer_cfg[eTIMER_CH_NUM_OF] =
     // ----------------------------------------------------------------------------------------------------------------
     //                      GPIO Port               GPIO Pin            Timer handler             
     // ----------------------------------------------------------------------------------------------------------------
-    [eTIMER_PWM0_CH1] = { .port = LED_1__PORT,  .pin = LED_1__PIN,  .p_tim = &gh_timer_pwm_0    },
+    [eTIMER_PWM0_CH1] = { .port = LED_1__PORT,  .pin = LED_1__PIN,  .p_tim = &gh_timer_pwm_0,   },
     [eTIMER_PWM0_CH2] = { .port = LED_2__PORT,  .pin = LED_2__PIN,  .p_tim = &gh_timer_pwm_0    },
     [eTIMER_PWM0_CH3] = { .port = LED_3__PORT,  .pin = LED_3__PIN,  .p_tim = &gh_timer_pwm_0    },
     [eTIMER_PWM0_CH4] = { .port = LED_4__PORT,  .pin = LED_4__PIN,  .p_tim = &gh_timer_pwm_0    },
@@ -134,9 +170,9 @@ static timer_status_t timer_pwm0_init(void)
         },
 
         .irq_priority   = APP_IRQ_PRIORITY_LOWEST,
-        .base_clock     = NRF_PWM_CLK_250kHz,
+        .base_clock     = NRF_PWM_CLK_1MHz,
         .count_mode     = NRF_PWM_MODE_UP,
-        .top_value      = 100,
+        .top_value      = TIMER_PWM0_PERIOD,
         .load_mode      = NRF_PWM_LOAD_INDIVIDUAL,
         .step_mode      = NRF_PWM_STEP_AUTO
     };
@@ -146,6 +182,9 @@ static timer_status_t timer_pwm0_init(void)
     {
         status = eTIMER_ERROR;
     }
+
+    // Setup sequence
+    nrf_drv_pwm_simple_playback( &gh_timer_pwm_0, &g_pwm0_sequence, 1, NRFX_PWM_FLAG_LOOP );
 
     return status;  
 }
@@ -182,29 +221,8 @@ timer_status_t timer_init(void)
 
     if ( false == gb_is_init )
     {
-
         // Init timer PWM0
         status |= timer_pwm0_init();
-
-
-
-        // Setup sequence for all channels
-
-/*
-    static nrf_pwm_sequence_t seq = 
-    {   
-        .values.p_individual = (nrf_pwm_values_individual_t*) &gu16_ch_val,
-
-        .length             = PWM_NUM_OF_CH,    // Number of 16-bit values in the array pointed by @p values
-        .repeats            = 0,
-        .end_delay          = 0
-    };
-
-        
-    // NRFX_PWM_FLAG_LOOP
-
-    nrf_drv_pwm_simple_playback( &m_pwm0, &seq, 1, NRFX_PWM_FLAG_LOOP );
-*/
 
         // Init success
         if ( eTIMER_OK == status )
@@ -241,7 +259,7 @@ timer_status_t timer_set_pwm(const timer_ch_t ch, const float32_t duty)
     {
         if (( duty >= 0.0f ) && ( duty <= 1.0f ))
 		{
-			// TODO: Set duty
+            gu16_compare_val[ch] = (uint16_t)( TIMER_PWM0_PERIOD * ( 1.0f - duty ));
 		}
 		else
 		{
