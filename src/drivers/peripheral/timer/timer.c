@@ -36,9 +36,11 @@
 /**
  *  Timer PWM0 PWM output frequency
  *
+ *  Valid range @1MHz base freq: 500 - 5000Hz
+ *
  *  Unit: Hz
  */
-#define TIMER_PWM0_FREQ_HZ          ( 5000 )
+#define TIMER_PWM0_FREQ_HZ          ( 4000 )
 
 /**
  *  Timer PWM0 Base frequency
@@ -275,7 +277,6 @@ timer_status_t timer_set_pwm(const timer_ch_t ch, const float32_t duty)
     return status;   
 }
     
-
 ////////////////////////////////////////////////////////////////////////////////
 /**
 * @} <!-- END GROUP -->
