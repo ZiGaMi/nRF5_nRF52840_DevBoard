@@ -76,14 +76,20 @@ static void app_update_adc_pars (void);
 ////////////////////////////////////////////////////////////////////////////////
 void app_init(void)
 {
-    // Init periphery
+    // Init gpio
     gpio_init();
-    timer_init();
 
     // Init Cli
     if ( eCLI_OK != cli_init())
     {
         PROJECT_CONFIG_ASSERT( 0 );
+    }
+
+    // Init timer
+    if ( eTIMER_OK != timer_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "Timer init error!" );
+        PROJECT_CONFIG_ASSERT( 0 );        
     }
 
     // Init ADC
@@ -221,7 +227,7 @@ static void app_led_fade_setup(void)
 static void app_btn_1_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 1 pressed!" );
-    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
+    led_blink_smooth( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 	
 	// Set parameter
 	par_set( ePAR_BTN_1, (uint8_t*) &(uint8_t){1} );
@@ -261,7 +267,7 @@ static void app_btn_1_released(void)
 static void app_btn_2_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 2 pressed!" );
-    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
+    led_blink_smooth( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_2, (uint8_t*) &(uint8_t){1} );
@@ -297,7 +303,7 @@ static void app_btn_2_released(void)
 static void app_btn_3_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 3 pressed!" );
-    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
+    led_blink_smooth( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_3, (uint8_t*) &(uint8_t){1} );
@@ -332,7 +338,7 @@ static void app_btn_3_released(void)
 static void app_btn_4_pressed(void)
 {
 	cli_printf_ch( eCLI_CH_APP, "User btn 4 pressed!" );
-    led_blink( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
+    led_blink_smooth( eLED_4, 0.1f, 0.2f, eLED_BLINK_1X );
 
 	// Set parameter
 	par_set( ePAR_BTN_4, (uint8_t*) &(uint8_t){1} );
