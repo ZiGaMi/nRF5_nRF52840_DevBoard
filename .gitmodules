@@ -19,3 +19,6 @@
 [submodule "src/drivers/hmi/led/led"]
 	path = src/drivers/hmi/led/led
 	url = https://github.com/GeneralEmbeddedCLibraries/led.git
+[submodule "src/middleware/watchdog/watchdog"]
+	path = src/middleware/watchdog/watchdog
+	url = https://github.com/GeneralEmbeddedCLibraries/watchdog.git
