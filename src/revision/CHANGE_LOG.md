@@ -9,6 +9,7 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
 
 ### Added
  - Implementation of PWM timer low level driver
+ - Implementation of watchdog
 
 ### Changed
  - Remap LED low level drivers from GPIO to PWM timer
