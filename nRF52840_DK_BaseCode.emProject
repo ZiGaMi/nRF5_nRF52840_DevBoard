@@ -155,6 +155,7 @@
       <file file_name="src/config/sdk_config.h" />
       <file file_name="src/project_config.c" />
       <file file_name="src/pin_mapper.h" />
+      <file file_name="src/project_config.h" />
     </folder>
     <folder Name="middleware">
       <folder Name="filter">

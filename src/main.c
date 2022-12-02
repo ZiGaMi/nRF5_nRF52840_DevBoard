@@ -74,7 +74,9 @@ int main(void)
     }
     else
     {
-        wdt_start();
+        #if ( 1 == PROJECT_CONFIG_WDT_EN )
+            wdt_start();
+        #endif
     }
 
     // Init application
