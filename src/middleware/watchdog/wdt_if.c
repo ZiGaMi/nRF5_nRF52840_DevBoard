@@ -43,13 +43,6 @@
 
 // USER DEFINITIONS BEGIN...
 
-/**
- * 	Watchdog mutex timeout
- *
- * 	Unit: ms
- */
-#define WDT_CFG_MUTEX_TIMEOUT_MS				( 10 )
-
 // USER DEFINITIONS END...
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,13 +62,11 @@ static nrf_drv_wdt_channel_id g_wdt_ch_id = 0;
 // Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /**
  * @brief WDT events handler.
  */
 void wdt_event_handler(void)
 {
-
     //NOTE: The max amount of time we can spend in WDT interrupt is two cycles of 32768[Hz] clock - after that, reset occurs
 }
 
@@ -99,16 +90,13 @@ wdt_status_t wdt_if_init(void)
 
     // USER CODE START...
     
-    //Configure WDT.
-    //const nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
-   
+    //Configure WDT.   
     const nrf_drv_wdt_config_t config = 
     {
         .behaviour          = NRF_WDT_BEHAVIOUR_RUN_SLEEP,                          /**<WDT behaviour when CPU in sleep/halt mode. Look at "nrf_wdt_behaviour_t" definition */
-        .reload_value       = (uint32_t) ( 10UL * WDT_CFG_KICK_PERIOD_TIME_MS ),    /**<WDT reload value in ms. */
+        .reload_value       = (uint32_t) ( 10UL * WDT_CFG_KICK_PERIOD_TIME_MS ),    /**<WDT reload value in ms. NOTE: Timeout is 10x bigger that kick period! */
         .interrupt_priority = NRFX_WDT_CONFIG_IRQ_PRIORITY,
     };
-
 
     // Init WDT
     if ( NRF_SUCCESS != nrf_drv_wdt_init( &config, wdt_event_handler ))
