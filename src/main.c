@@ -25,6 +25,9 @@
 #include "project_config.h"
 #include "pin_mapper.h"
 
+// Middleware
+#include "middleware/watchdog/watchdog/src/wdt.h"
+
 // Application
 #include "app.h"
 
@@ -64,6 +67,16 @@ int main(void)
     // Init systick
     systick_init();
 
+    // Init watchdog
+    if ( eWDT_OK != wdt_init())
+    {
+        PROJECT_CONFIG_ASSERT(0);
+    }
+    else
+    {
+        wdt_start();
+    }
+
     // Init application
     app_init();
 
@@ -79,6 +92,9 @@ int main(void)
             cnt_p_10ms = cnt;
 
             app_hndl_10ms();
+
+            // Kick watchdog every 10ms
+            wdt_task_report( eWDT_TASK_MAIN );
         }
 
         // 100ms loop
@@ -96,6 +112,9 @@ int main(void)
 
             app_hndl_1000ms();
         }
+
+        // Handle watchdog
+        wdt_hndl();
     }
 }
 
