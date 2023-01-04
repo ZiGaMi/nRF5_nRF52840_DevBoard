@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2022 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,8 @@
 * @file     button_cfg.c
 * @brief    Button configurations
 * @author   Ziga Miklosic
-* @date     27.09.2021
-* @version	V1.0.0
+* @date     04.11.2022
+* @version	V1.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -50,12 +50,12 @@ static const button_cfg_t g_button_cfg[ eBUTTON_NUM_OF ] =
 	// USER CODE BEGIN...
 
 	// -------------------------------------------------------------------------------------------------------------------------
-	//	Gpio pin			Button polarity				LPF enable	Default LPF fc
+	//	Gpio pin						Button polarity							LPF enable			Default LPF fc
 	// -------------------------------------------------------------------------------------------------------------------------
-	{ 	.gpio_pin = eGPIO_BTN_1,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_2,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_3,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
-	{ 	.gpio_pin = eGPIO_BTN_4,	.polarity = eBUTTON_POL_ACTIVE_LOW,	.lpf_en = true,    .lpf_fc = 10.0f          },
+    {     .gpio_pin = eGPIO_BTN_1,    .polarity = eBUTTON_POL_ACTIVE_LOW,    .lpf_en = true,    .lpf_fc = 10.0f          },
+    {     .gpio_pin = eGPIO_BTN_2,    .polarity = eBUTTON_POL_ACTIVE_LOW,    .lpf_en = true,    .lpf_fc = 10.0f          },
+    {     .gpio_pin = eGPIO_BTN_3,    .polarity = eBUTTON_POL_ACTIVE_LOW,    .lpf_en = true,    .lpf_fc = 10.0f          },
+    {     .gpio_pin = eGPIO_BTN_4,    .polarity = eBUTTON_POL_ACTIVE_LOW,    .lpf_en = true,    .lpf_fc = 10.0f          },
 
 
 	// USER CODE END...

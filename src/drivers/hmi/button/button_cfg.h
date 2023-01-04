@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2022 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,8 @@
 * @file     button_cfg.h
 * @brief    Button configurations
 * @author   Ziga Miklosic
-* @date     27.09.2021
-* @version	V1.0.0
+* @date     04.11.2022
+* @version	V1.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -33,10 +33,10 @@
 
 // USER CODE BEGIN...
 
-#include "project_config.h"
+//#include "project_config.h"
 
 // Debug communication port
-//#include "middleware/debug_comm_port/com_dbg.h"
+//#include "middleware/cli/cli/src/cli.h"
 
 // USER CODE END...
 
@@ -57,16 +57,16 @@
  */
 typedef enum
 {
-    // USER CODE START...
+	// USER CODE START...
 
     eBUTTON_1 = 0,
     eBUTTON_2,
     eBUTTON_3,
     eBUTTON_4,
 
-    // USER CODE END...
+	// USER CODE END...
 
-    eBUTTON_NUM_OF
+	eBUTTON_NUM_OF
 } button_num_t;
 
 
@@ -76,14 +76,19 @@ typedef enum
  * 	Main button handler period
  * 	Unit: sec
  */
-#define BUTTON_CFG_HNDL_PERIOD_S	( 0.01f )
+#define BUTTON_CFG_HNDL_PERIOD_S				( 0.01f )
+
+/**
+ * 	Enable/Disable usage of Filter module. It is being used for debouncing.
+ */
+#define BUTTON_CFG_FILTER_EN					( 1 )
 
 /**
  * 	Enable/Disable debug mode
  *
  * 	@note Disabled in release!
  */
-#define BUTTON_CFG_DEBUG_EN		( 0 )
+#define BUTTON_CFG_DEBUG_EN						( 0 )
 #ifndef DEBUG
 	#undef BUTTON_CFG_DEBUG_EN
 	#define BUTTON_CFG_DEBUG_EN	( 0 )
@@ -94,7 +99,7 @@ typedef enum
  *
  * 	@note Disabled in release!
  */
-#define BUTTON_CFG_ASSERT_EN		( 0 )
+#define BUTTON_CFG_ASSERT_EN					( 0 )
 #ifndef DEBUG
 	#undef BUTTON_CFG_ASSERT_EN
 	#define BUTTON_CFG_ASSERT_EN	( 0 )
@@ -104,9 +109,9 @@ typedef enum
  * 	Debug communication port macros
  */
 #if ( 1 == BUTTON_CFG_DEBUG_EN )
-	#define BUTTON_DBG_PRINT( ... )		{ ; }
+	#define BUTTON_PRINT( ... )				( cli_printf( __VA_ARGS__ ))
 #else
-	#define BUTTON_DBG_PRINT( ... )		{ ; }
+	#define BUTTON_PRINT( ... )				{ ; }
 
 #endif
 
@@ -114,9 +119,9 @@ typedef enum
  * 	 Assertion macros
  */
 #if ( 1 == BUTTON_CFG_ASSERT_EN )
-	#define BUTTON_ASSERT(x)		PROJECT_CONFIG_ASSERT(x)
+	#define BUTTON_ASSERT(x)					PROJECT_CONFIG_ASSERT(x)
 #else
-	#define BUTTON_ASSERT(x)                { ; }
+	#define BUTTON_ASSERT(x)					{ ; }
 #endif
 
 // USER CODE END...
