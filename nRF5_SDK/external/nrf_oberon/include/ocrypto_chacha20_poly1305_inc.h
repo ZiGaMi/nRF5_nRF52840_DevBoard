@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -56,14 +56,15 @@
 #ifndef OCRYPTO_CHACHA20_POLY1305_INC_H
 #define OCRYPTO_CHACHA20_POLY1305_INC_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include "ocrypto_chacha20_poly1305.h"
 #include "ocrypto_poly1305.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 /**@cond */
@@ -141,7 +142,7 @@ void ocrypto_chacha20_poly1305_init(
  * @remark Initialization of the generator state @p ctx through
  *         @c ocrypto_chacha20_poly1305_init is required before this function can be called.
  *
- * @remark @c ocrypto_chacha20_poly1305_update_aad must be called before any call to 
+ * @remark @c ocrypto_chacha20_poly1305_update_aad must be called before any call to
  *         @c ocrypto_chacha20_poly1305_update_enc or @c ocrypto_chacha20_poly1305_update_dec.
  */
 void ocrypto_chacha20_poly1305_update_aad(
@@ -166,7 +167,7 @@ void ocrypto_chacha20_poly1305_update_aad(
  * @remark Initialization of the generator state @p ctx through
  *         @c ocrypto_chacha20_poly1305_init is required before this function can be called.
  *
- * @remark @c ocrypto_chacha20_poly1305_update_enc must be called after any call to 
+ * @remark @c ocrypto_chacha20_poly1305_update_enc must be called after any call to
  *         @c ocrypto_chacha20_poly1305_update_aad.
  *
  * @remark @p c and @p m can point to the same address.
@@ -196,7 +197,7 @@ void ocrypto_chacha20_poly1305_update_enc(
  * @remark Initialization of the generator state @p ctx through
  *         @c ocrypto_chacha20_poly1305_init is required before this function can be called.
  *
- * @remark @c ocrypto_chacha20_poly1305_update_dec must be called after any call to 
+ * @remark @c ocrypto_chacha20_poly1305_update_dec must be called after any call to
  *         @c ocrypto_chacha20_poly1305_update_aad.
  *
  * @remark @p m and @p c can point to the same address.
@@ -240,6 +241,7 @@ int ocrypto_chacha20_poly1305_final_dec(
 }
 #endif
 
-#endif
+#endif /* #ifndef OCRYPTO_CHACHA20_POLY1305_INC_H */
 
 /** @} */
+

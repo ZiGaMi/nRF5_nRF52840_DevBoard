@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -43,7 +43,7 @@
  * @ingroup nrf_oberon_aes
  * @{
  * @brief Type definitions and APIs for AES-GCM (AES Galois/Counter Mode).
- * 
+ *
  * AES (advanced encryption standard) is a symmetric encryption algorithm standardized by NIST.
  * AES transfers a 128-bit block of data into an encrypted block of the same size.
  *
@@ -55,12 +55,13 @@
 #ifndef OCRYPTO_AES_GCM_H
 #define OCRYPTO_AES_GCM_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stddef.h>
-#include <stdint.h>
 
 
 /**
@@ -109,6 +110,7 @@ int ocrypto_aes_gcm_decrypt (
 }
 #endif
 
-#endif
+#endif /* #ifndef OCRYPTO_AES_GCM_H */
 
 /** @} */
+

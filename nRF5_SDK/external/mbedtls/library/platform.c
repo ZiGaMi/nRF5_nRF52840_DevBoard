@@ -1,8 +1,14 @@
 /*
  *  Platform abstraction layer
  *
- *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
- *  SPDX-License-Identifier: Apache-2.0
+ *  Copyright The Mbed TLS Contributors
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+ *
+ *  This file is provided under the Apache License 2.0, or the
+ *  GNU General Public License v2.0 or later.
+ *
+ *  **********
+ *  Apache License 2.0:
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -16,7 +22,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  This file is part of mbed TLS (https://tls.mbed.org)
+ *  **********
+ *
+ *  **********
+ *  GNU General Public License v2.0 or later:
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  **********
  */
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -28,8 +53,16 @@
 #if defined(MBEDTLS_PLATFORM_C)
 
 #include "mbedtls/platform.h"
+#include "mbedtls/platform_util.h"
 
-#if defined(MBEDTLS_PLATFORM_MEMORY)
+/* The compile time configuration of memory allocation via the macros
+ * MBEDTLS_PLATFORM_{FREE/CALLOC}_MACRO takes precedence over the runtime
+ * configuration via mbedtls_platform_set_calloc_free(). So, omit everything
+ * related to the latter if MBEDTLS_PLATFORM_{FREE/CALLOC}_MACRO are defined. */
+#if defined(MBEDTLS_PLATFORM_MEMORY) &&                 \
+    !( defined(MBEDTLS_PLATFORM_CALLOC_MACRO) &&        \
+       defined(MBEDTLS_PLATFORM_FREE_MACRO) )
+
 #if !defined(MBEDTLS_PLATFORM_STD_CALLOC)
 static void *platform_calloc_uninit( size_t n, size_t size )
 {
@@ -50,17 +83,29 @@ static void platform_free_uninit( void *ptr )
 #define MBEDTLS_PLATFORM_STD_FREE     platform_free_uninit
 #endif /* !MBEDTLS_PLATFORM_STD_FREE */
 
-void * (*mbedtls_calloc)( size_t, size_t ) = MBEDTLS_PLATFORM_STD_CALLOC;
-void (*mbedtls_free)( void * )     = MBEDTLS_PLATFORM_STD_FREE;
+static void * (*mbedtls_calloc_func)( size_t, size_t ) = MBEDTLS_PLATFORM_STD_CALLOC;
+static void (*mbedtls_free_func)( void * ) = MBEDTLS_PLATFORM_STD_FREE;
+
+void * mbedtls_calloc( size_t nmemb, size_t size )
+{
+    return (*mbedtls_calloc_func)( nmemb, size );
+}
+
+void mbedtls_free( void * ptr )
+{
+    (*mbedtls_free_func)( ptr );
+}
 
 int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),
                               void (*free_func)( void * ) )
 {
-    mbedtls_calloc = calloc_func;
-    mbedtls_free = free_func;
+    mbedtls_calloc_func = calloc_func;
+    mbedtls_free_func = free_func;
     return( 0 );
 }
-#endif /* MBEDTLS_PLATFORM_MEMORY */
+#endif /* MBEDTLS_PLATFORM_MEMORY &&
+          !( defined(MBEDTLS_PLATFORM_CALLOC_MACRO) &&
+             defined(MBEDTLS_PLATFORM_FREE_MACRO) ) */
 
 #if defined(_WIN32)
 #include <stdarg.h>
@@ -74,7 +119,7 @@ int mbedtls_platform_win32_snprintf( char *s, size_t n, const char *fmt, ... )
         return( -1 );
 
     va_start( argp, fmt );
-#if defined(_TRUNCATE)
+#if defined(_TRUNCATE) && !defined(__MINGW32__)
     ret = _vsnprintf_s( s, n, _TRUNCATE, fmt, argp );
 #else
     ret = _vsnprintf( s, n, fmt, argp );
@@ -228,12 +273,13 @@ int mbedtls_platform_std_nv_seed_read( unsigned char *buf, size_t buf_len )
     size_t n;
 
     if( ( file = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "rb" ) ) == NULL )
-        return -1;
+        return( -1 );
 
     if( ( n = fread( buf, 1, buf_len, file ) ) != buf_len )
     {
         fclose( file );
-        return -1;
+        mbedtls_platform_zeroize( buf, buf_len );
+        return( -1 );
     }
 
     fclose( file );
@@ -303,5 +349,25 @@ int mbedtls_platform_set_nv_seed(
 }
 #endif /* MBEDTLS_PLATFORM_NV_SEED_ALT */
 #endif /* MBEDTLS_ENTROPY_NV_SEED */
+
+#if !defined(MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT)
+/*
+ * Placeholder platform setup that does nothing by default
+ */
+int mbedtls_platform_setup( mbedtls_platform_context *ctx )
+{
+    (void)ctx;
+
+    return( 0 );
+}
+
+/*
+ * Placeholder platform teardown that does nothing by default
+ */
+void mbedtls_platform_teardown( mbedtls_platform_context *ctx )
+{
+    (void)ctx;
+}
+#endif /* MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT */
 
 #endif /* MBEDTLS_PLATFORM_C */
