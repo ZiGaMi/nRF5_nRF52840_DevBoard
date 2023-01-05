@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 - 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -56,12 +56,81 @@
 #define BLE_ADVERTISING_ENABLED 0
 #endif
 
-// <q> BLE_DTM_ENABLED  - ble_dtm - Module for testing RF/PHY using DTM commands
- 
-
+// <e> BLE_DTM_ENABLED - ble_dtm - Module for testing RF/PHY using DTM commands
+//==========================================================
 #ifndef BLE_DTM_ENABLED
 #define BLE_DTM_ENABLED 0
 #endif
+// <o> NRF_RADIO_ANTENNA_PIN_1 - Antenna 1 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_1
+#define NRF_RADIO_ANTENNA_PIN_1 21
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_2 - Antenna 2 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_2
+#define NRF_RADIO_ANTENNA_PIN_2 23
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_3 - Antenna 3 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_3
+#define NRF_RADIO_ANTENNA_PIN_3 26
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_4 - Antenna 4 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_4
+#define NRF_RADIO_ANTENNA_PIN_4 27
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_5 - Antenna 5 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_5
+#define NRF_RADIO_ANTENNA_PIN_5 28
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_6 - Antenna 6 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_6
+#define NRF_RADIO_ANTENNA_PIN_6 29
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_7 - Antenna 7 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_7
+#define NRF_RADIO_ANTENNA_PIN_7 30
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_8 - Antenna 8 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_8
+#define NRF_RADIO_ANTENNA_PIN_8 31
+#endif
+
+// <o> NRF_RADIO_ANTENNA_COUNT  
+#ifndef NRF_RADIO_ANTENNA_COUNT
+#define NRF_RADIO_ANTENNA_COUNT 12
+#endif
+
+// <o> DTM_RADIO_IRQ_PRIORITY - RADIO interrupt priority 
+#ifndef DTM_RADIO_IRQ_PRIORITY
+#define DTM_RADIO_IRQ_PRIORITY 2
+#endif
+
+// <o> DTM_TIMER_IRQ_PRIORITY - DTM timer interrupt priority 
+#ifndef DTM_TIMER_IRQ_PRIORITY
+#define DTM_TIMER_IRQ_PRIORITY 3
+#endif
+
+// <o> DTM_ANOMALY_172_TIMER_IRQ_PRIORITY - DTM anomaly 172 timer interrupt priority 
+#ifndef DTM_ANOMALY_172_TIMER_IRQ_PRIORITY
+#define DTM_ANOMALY_172_TIMER_IRQ_PRIORITY 2
+#endif
+
+// <o> NRF_DTM_TIMER_INSTANCE  - DTM TIMER instance
+ 
+// <0=> TIMER0 
+// <2=> TIMER2 
+
+#ifndef NRF_DTM_TIMER_INSTANCE
+#define NRF_DTM_TIMER_INSTANCE 0
+#endif
+
+// </e>
 
 // <q> BLE_RACP_ENABLED  - ble_racp - Record Access Control Point library
  
@@ -3866,7 +3935,7 @@
 #define NRFX_WDT_CONFIG_BEHAVIOUR 1
 #endif
 
-// <o> NRFX_WDT_CONFIG_RELOAD_VALUE - Reload value  <15-4294967295> 
+// <o> NRFX_WDT_CONFIG_RELOAD_VALUE - Reload value in ms  <1-131072000> 
 
 
 #ifndef NRFX_WDT_CONFIG_RELOAD_VALUE

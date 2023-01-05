@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -55,11 +55,12 @@
 #ifndef OCRYPTO_CURVE25519_H
 #define OCRYPTO_CURVE25519_H
 
+#include <stdint.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 
 /**
@@ -113,6 +114,7 @@ void ocrypto_curve25519_scalarmult(
 }
 #endif
 
-#endif
+#endif /* #ifndef OCRYPTO_CURVE25519_H */
 
 /** @} */
+

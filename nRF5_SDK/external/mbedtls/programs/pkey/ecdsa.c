@@ -1,8 +1,14 @@
 /*
  *  Example ECDSA program
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  SPDX-License-Identifier: Apache-2.0
+ *  Copyright The Mbed TLS Contributors
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+ *
+ *  This file is provided under the Apache License 2.0, or the
+ *  GNU General Public License v2.0 or later.
+ *
+ *  **********
+ *  Apache License 2.0:
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -16,7 +22,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  This file is part of mbed TLS (https://tls.mbed.org)
+ *  **********
+ *
+ *  **********
+ *  GNU General Public License v2.0 or later:
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  **********
  */
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -29,14 +54,19 @@
 #include "mbedtls/platform.h"
 #else
 #include <stdio.h>
-#define mbedtls_printf     printf
-#endif
+#include <stdlib.h>
+#define mbedtls_printf          printf
+#define mbedtls_exit            exit
+#define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
+#define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
+#endif /* MBEDTLS_PLATFORM_C */
 
 #if defined(MBEDTLS_ECDSA_C) && \
     defined(MBEDTLS_ENTROPY_C) && defined(MBEDTLS_CTR_DRBG_C)
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecdsa.h"
+#include "mbedtls/sha256.h"
 
 #include <string.h>
 #endif
@@ -61,7 +91,7 @@ int main( void )
 {
     mbedtls_printf("MBEDTLS_ECDSA_C and/or MBEDTLS_SHA256_C and/or "
            "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C not defined\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 #if defined(VERBOSE)
@@ -95,14 +125,17 @@ static void dump_pubkey( const char *title, mbedtls_ecdsa_context *key )
 #define dump_pubkey( a, b )
 #endif
 
+
 int main( int argc, char *argv[] )
 {
-    int ret;
+    int ret = 1;
+    int exit_code = MBEDTLS_EXIT_FAILURE;
     mbedtls_ecdsa_context ctx_sign, ctx_verify;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
-    unsigned char hash[] = "This should be the hash of a message.";
-    unsigned char sig[512];
+    unsigned char message[100];
+    unsigned char hash[32];
+    unsigned char sig[MBEDTLS_ECDSA_MAX_LEN];
     size_t sig_len;
     const char *pers = "ecdsa";
     ((void) argv);
@@ -111,8 +144,8 @@ int main( int argc, char *argv[] )
     mbedtls_ecdsa_init( &ctx_verify );
     mbedtls_ctr_drbg_init( &ctr_drbg );
 
-    memset(sig, 0, sizeof( sig ) );
-    ret = 1;
+    memset( sig, 0, sizeof( sig ) );
+    memset( message, 0x25, sizeof( message ) );
 
     if( argc != 1 )
     {
@@ -155,9 +188,25 @@ int main( int argc, char *argv[] )
     dump_pubkey( "  + Public key: ", &ctx_sign );
 
     /*
-     * Sign some message hash
+     * Compute message hash
      */
-    mbedtls_printf( "  . Signing message..." );
+    mbedtls_printf( "  . Computing message hash..." );
+    fflush( stdout );
+
+    if( ( ret = mbedtls_sha256_ret( message, sizeof( message ), hash, 0 ) ) != 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_sha256_ret returned %d\n", ret );
+        goto exit;
+    }
+
+    mbedtls_printf( " ok\n" );
+
+    dump_buf( "  + Hash: ", hash, sizeof( hash ) );
+
+    /*
+     * Sign message hash
+     */
+    mbedtls_printf( "  . Signing message hash..." );
     fflush( stdout );
 
     if( ( ret = mbedtls_ecdsa_write_signature( &ctx_sign, MBEDTLS_MD_SHA256,
@@ -165,12 +214,11 @@ int main( int argc, char *argv[] )
                                        sig, &sig_len,
                                        mbedtls_ctr_drbg_random, &ctr_drbg ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  ! mbedtls_ecdsa_genkey returned %d\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_ecdsa_write_signature returned %d\n", ret );
         goto exit;
     }
     mbedtls_printf( " ok (signature length = %u)\n", (unsigned int) sig_len );
 
-    dump_buf( "  + Hash: ", hash, sizeof hash );
     dump_buf( "  + Signature: ", sig, sig_len );
 
     /*
@@ -195,8 +243,6 @@ int main( int argc, char *argv[] )
         goto exit;
     }
 
-    ret = 0;
-
     /*
      * Verify signature
      */
@@ -213,6 +259,8 @@ int main( int argc, char *argv[] )
 
     mbedtls_printf( " ok\n" );
 
+    exit_code = MBEDTLS_EXIT_SUCCESS;
+
 exit:
 
 #if defined(_WIN32)
@@ -225,7 +273,7 @@ exit:
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 
-    return( ret );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_ECDSA_C && MBEDTLS_ENTROPY_C && MBEDTLS_CTR_DRBG_C &&
           ECPARAMS */

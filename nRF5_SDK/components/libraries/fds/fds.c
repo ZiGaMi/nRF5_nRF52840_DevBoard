@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -1092,6 +1092,9 @@ static void gc_swap_pages(void)
     // Keep the offset for this page, but reset it for the swap.
     m_pages[m_gc.cur_page].write_offset = m_swap_page.write_offset;
     m_swap_page.write_offset            = FDS_PAGE_TAG_SIZE;
+
+    // Page has been garbage collected
+    m_pages[m_gc.cur_page].can_gc = false;
 }
 
 
@@ -1191,9 +1194,6 @@ static ret_code_t init_execute(uint32_t prev_ret, fds_op_t * const p_op)
         {
             p_op->init.step       = FDS_OP_INIT_TAG_SWAP;
 
-            // When promoting the swap, keep the write_offset set by pages_init().
-            ret = page_tag_write_data(m_swap_page.p_addr);
-
             uint16_t const         gc         = m_gc.cur_page;
             uint32_t const * const p_old_swap = m_swap_page.p_addr;
 
@@ -1206,6 +1206,11 @@ static ret_code_t init_execute(uint32_t prev_ret, fds_op_t * const p_op)
             m_swap_page.write_offset = FDS_PAGE_TAG_SIZE;
 
             m_pages[gc].page_type = FDS_PAGE_DATA;
+
+            // Promote the old swap page to data, but do this at the end
+            // because we can re-enter this function; we must update have
+            // updated the page in RAM before that.
+            ret = page_tag_write_data(p_old_swap);
         } break;
 
         default:
@@ -1740,6 +1745,8 @@ ret_code_t fds_init(void)
     {
         case NO_PAGES:
         case NO_SWAP:
+            m_flags.initialized  = false;
+            m_flags.initializing = false;
             return FDS_ERR_NO_PAGES;
 
         case ALREADY_INSTALLED:

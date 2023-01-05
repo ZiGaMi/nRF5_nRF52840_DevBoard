@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -60,6 +60,11 @@
 #include <stdint.h>
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * Length of a public key.
  */
@@ -116,13 +121,18 @@ void ocrypto_ed25519_sign(uint8_t sig[ocrypto_ed25519_BYTES],
  * @param m_len Length of @p m.
  * @param pk    Signer's public key.
  *
- * @retval 0  If signature is OK.
+ * @retval 0  If the signature is valid.
  * @retval -1 Otherwise.
  */
 int ocrypto_ed25519_verify(const uint8_t sig[ocrypto_ed25519_BYTES],
                            const uint8_t *m, size_t m_len,
                            const uint8_t pk[ocrypto_ed25519_PUBLIC_KEY_BYTES]);
 
+#ifdef __cplusplus
+}
 #endif
 
+#endif /* #ifndef OCRYPTO_ED25519_H */
+
 /** @} */
+

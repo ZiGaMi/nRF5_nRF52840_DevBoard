@@ -1,8 +1,14 @@
 /*
  *  Public Key layer for writing key files and structures
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  SPDX-License-Identifier: Apache-2.0
+ *  Copyright The Mbed TLS Contributors
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+ *
+ *  This file is provided under the Apache License 2.0, or the
+ *  GNU General Public License v2.0 or later.
+ *
+ *  **********
+ *  Apache License 2.0:
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -16,7 +22,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  This file is part of mbed TLS (https://tls.mbed.org)
+ *  **********
+ *
+ *  **********
+ *  GNU General Public License v2.0 or later:
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  **********
  */
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -30,6 +55,7 @@
 #include "mbedtls/pk.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/oid.h"
+#include "mbedtls/platform_util.h"
 
 #include <string.h>
 
@@ -37,7 +63,9 @@
 #include "mbedtls/rsa.h"
 #endif
 #if defined(MBEDTLS_ECP_C)
+#include "mbedtls/bignum.h"
 #include "mbedtls/ecp.h"
+#include "mbedtls/platform_util.h"
 #endif
 #if defined(MBEDTLS_ECDSA_C)
 #include "mbedtls/ecdsa.h"
@@ -54,6 +82,12 @@
 #define mbedtls_free       free
 #endif
 
+/* Parameter validation macros based on platform_util.h */
+#define PK_VALIDATE_RET( cond )    \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_PK_BAD_INPUT_DATA )
+#define PK_VALIDATE( cond )        \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
 #if defined(MBEDTLS_RSA_C)
 /*
  *  RSAPublicKey ::= SEQUENCE {
@@ -62,13 +96,31 @@
  *  }
  */
 static int pk_write_rsa_pubkey( unsigned char **p, unsigned char *start,
-                                  mbedtls_rsa_context *rsa )
+                                mbedtls_rsa_context *rsa )
 {
     int ret;
     size_t len = 0;
+    mbedtls_mpi T;
 
-    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( p, start, &rsa->E ) );
-    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( p, start, &rsa->N ) );
+    mbedtls_mpi_init( &T );
+
+    /* Export E */
+    if ( ( ret = mbedtls_rsa_export( rsa, NULL, NULL, NULL, NULL, &T ) ) != 0 ||
+         ( ret = mbedtls_asn1_write_mpi( p, start, &T ) ) < 0 )
+        goto end_of_export;
+    len += ret;
+
+    /* Export N */
+    if ( ( ret = mbedtls_rsa_export( rsa, &T, NULL, NULL, NULL, NULL ) ) != 0 ||
+         ( ret = mbedtls_asn1_write_mpi( p, start, &T ) ) < 0 )
+        goto end_of_export;
+    len += ret;
+
+end_of_export:
+
+    mbedtls_mpi_free( &T );
+    if( ret < 0 )
+        return( ret );
 
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( p, start, len ) );
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( p, start, MBEDTLS_ASN1_CONSTRUCTED |
@@ -83,7 +135,7 @@ static int pk_write_rsa_pubkey( unsigned char **p, unsigned char *start,
  * EC public key is an EC point
  */
 static int pk_write_ec_pubkey( unsigned char **p, unsigned char *start,
-                                 mbedtls_ecp_keypair *ec )
+                               mbedtls_ecp_keypair *ec )
 {
     int ret;
     size_t len = 0;
@@ -111,7 +163,7 @@ static int pk_write_ec_pubkey( unsigned char **p, unsigned char *start,
  * }
  */
 static int pk_write_ec_param( unsigned char **p, unsigned char *start,
-                                mbedtls_ecp_keypair *ec )
+                              mbedtls_ecp_keypair *ec )
 {
     int ret;
     size_t len = 0;
@@ -125,13 +177,38 @@ static int pk_write_ec_param( unsigned char **p, unsigned char *start,
 
     return( (int) len );
 }
+
+/*
+ * privateKey  OCTET STRING -- always of length ceil(log2(n)/8)
+ */
+static int pk_write_ec_private( unsigned char **p, unsigned char *start,
+                                mbedtls_ecp_keypair *ec )
+{
+    int ret;
+    size_t byte_length = ( ec->grp.pbits + 7 ) / 8;
+    unsigned char tmp[MBEDTLS_ECP_MAX_BYTES];
+
+    ret = mbedtls_mpi_write_binary( &ec->d, tmp, byte_length );
+    if( ret != 0 )
+        goto exit;
+    ret = mbedtls_asn1_write_octet_string( p, start, tmp, byte_length );
+
+exit:
+    mbedtls_platform_zeroize( tmp, byte_length );
+    return( ret );
+}
 #endif /* MBEDTLS_ECP_C */
 
 int mbedtls_pk_write_pubkey( unsigned char **p, unsigned char *start,
-                     const mbedtls_pk_context *key )
+                             const mbedtls_pk_context *key )
 {
     int ret;
     size_t len = 0;
+
+    PK_VALIDATE_RET( p != NULL );
+    PK_VALIDATE_RET( *p != NULL );
+    PK_VALIDATE_RET( start != NULL );
+    PK_VALIDATE_RET( key != NULL );
 
 #if defined(MBEDTLS_RSA_C)
     if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_RSA )
@@ -154,6 +231,11 @@ int mbedtls_pk_write_pubkey_der( mbedtls_pk_context *key, unsigned char *buf, si
     unsigned char *c;
     size_t len = 0, par_len = 0, oid_len;
     const char *oid;
+
+    PK_VALIDATE_RET( key != NULL );
+    if( size == 0 )
+        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    PK_VALIDATE_RET( buf != NULL );
 
     c = buf + size;
 
@@ -199,27 +281,92 @@ int mbedtls_pk_write_pubkey_der( mbedtls_pk_context *key, unsigned char *buf, si
 int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_t size )
 {
     int ret;
-    unsigned char *c = buf + size;
+    unsigned char *c;
     size_t len = 0;
+
+    PK_VALIDATE_RET( key != NULL );
+    if( size == 0 )
+        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    PK_VALIDATE_RET( buf != NULL );
+
+    c = buf + size;
 
 #if defined(MBEDTLS_RSA_C)
     if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_RSA )
     {
+        mbedtls_mpi T; /* Temporary holding the exported parameters */
         mbedtls_rsa_context *rsa = mbedtls_pk_rsa( *key );
 
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->QP ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->DQ ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->DP ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->Q ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->P ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->D ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->E ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &rsa->N ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_int( &c, buf, 0 ) );
+        /*
+         * Export the parameters one after another to avoid simultaneous copies.
+         */
 
+        mbedtls_mpi_init( &T );
+
+        /* Export QP */
+        if( ( ret = mbedtls_rsa_export_crt( rsa, NULL, NULL, &T ) ) != 0 ||
+            ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export DQ */
+        if( ( ret = mbedtls_rsa_export_crt( rsa, NULL, &T, NULL ) ) != 0 ||
+            ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export DP */
+        if( ( ret = mbedtls_rsa_export_crt( rsa, &T, NULL, NULL ) ) != 0 ||
+            ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export Q */
+        if ( ( ret = mbedtls_rsa_export( rsa, NULL, NULL,
+                                         &T, NULL, NULL ) ) != 0 ||
+             ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export P */
+        if ( ( ret = mbedtls_rsa_export( rsa, NULL, &T,
+                                         NULL, NULL, NULL ) ) != 0 ||
+             ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export D */
+        if ( ( ret = mbedtls_rsa_export( rsa, NULL, NULL,
+                                         NULL, &T, NULL ) ) != 0 ||
+             ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export E */
+        if ( ( ret = mbedtls_rsa_export( rsa, NULL, NULL,
+                                         NULL, NULL, &T ) ) != 0 ||
+             ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+        /* Export N */
+        if ( ( ret = mbedtls_rsa_export( rsa, &T, NULL,
+                                         NULL, NULL, NULL ) ) != 0 ||
+             ( ret = mbedtls_asn1_write_mpi( &c, buf, &T ) ) < 0 )
+            goto end_of_export;
+        len += ret;
+
+    end_of_export:
+
+        mbedtls_mpi_free( &T );
+        if( ret < 0 )
+            return( ret );
+
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_int( &c, buf, 0 ) );
         MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, buf, len ) );
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED |
-                                                    MBEDTLS_ASN1_SEQUENCE ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c,
+                                               buf, MBEDTLS_ASN1_CONSTRUCTED |
+                                               MBEDTLS_ASN1_SEQUENCE ) );
     }
     else
 #endif /* MBEDTLS_RSA_C */
@@ -264,9 +411,8 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
                             MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 0 ) );
         len += par_len;
 
-        /* privateKey: write as MPI then fix tag */
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_mpi( &c, buf, &ec->d ) );
-        *c = MBEDTLS_ASN1_OCTET_STRING;
+        /* privateKey */
+        MBEDTLS_ASN1_CHK_ADD( len, pk_write_ec_private( &c, buf, ec ) );
 
         /* version */
         MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_int( &c, buf, 1 ) );
@@ -309,7 +455,7 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
  *      publicExponent    INTEGER   -- e            1 + 3 + MPI_MAX + 1
  *  }
  */
-#define RSA_PUB_DER_MAX_BYTES   38 + 2 * MBEDTLS_MPI_MAX_SIZE
+#define RSA_PUB_DER_MAX_BYTES   ( 38 + 2 * MBEDTLS_MPI_MAX_SIZE )
 
 /*
  * RSA private keys:
@@ -326,10 +472,10 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
  *      otherPrimeInfos   OtherPrimeInfos OPTIONAL  0 (not supported)
  *  }
  */
-#define MPI_MAX_SIZE_2          MBEDTLS_MPI_MAX_SIZE / 2 + \
-                                MBEDTLS_MPI_MAX_SIZE % 2
-#define RSA_PRV_DER_MAX_BYTES   47 + 3 * MBEDTLS_MPI_MAX_SIZE \
-                                   + 5 * MPI_MAX_SIZE_2
+#define MPI_MAX_SIZE_2          ( MBEDTLS_MPI_MAX_SIZE / 2 + \
+                                  MBEDTLS_MPI_MAX_SIZE % 2 )
+#define RSA_PRV_DER_MAX_BYTES   ( 47 + 3 * MBEDTLS_MPI_MAX_SIZE \
+                                   + 5 * MPI_MAX_SIZE_2 )
 
 #else /* MBEDTLS_RSA_C */
 
@@ -350,7 +496,7 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
  *                                            + 2 * ECP_MAX (coords)    [1]
  *  }
  */
-#define ECP_PUB_DER_MAX_BYTES   30 + 2 * MBEDTLS_ECP_MAX_BYTES
+#define ECP_PUB_DER_MAX_BYTES   ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
 
 /*
  * EC private keys:
@@ -361,7 +507,7 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
  *      publicKey  [1] BIT STRING OPTIONAL      1 + 2 + [1] above
  *    }
  */
-#define ECP_PRV_DER_MAX_BYTES   29 + 3 * MBEDTLS_ECP_MAX_BYTES
+#define ECP_PRV_DER_MAX_BYTES   ( 29 + 3 * MBEDTLS_ECP_MAX_BYTES )
 
 #else /* MBEDTLS_ECP_C */
 
@@ -370,16 +516,19 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
 
 #endif /* MBEDTLS_ECP_C */
 
-#define PUB_DER_MAX_BYTES   RSA_PUB_DER_MAX_BYTES > ECP_PUB_DER_MAX_BYTES ? \
-                            RSA_PUB_DER_MAX_BYTES : ECP_PUB_DER_MAX_BYTES
-#define PRV_DER_MAX_BYTES   RSA_PRV_DER_MAX_BYTES > ECP_PRV_DER_MAX_BYTES ? \
-                            RSA_PRV_DER_MAX_BYTES : ECP_PRV_DER_MAX_BYTES
+#define PUB_DER_MAX_BYTES   ( RSA_PUB_DER_MAX_BYTES > ECP_PUB_DER_MAX_BYTES ? \
+                              RSA_PUB_DER_MAX_BYTES : ECP_PUB_DER_MAX_BYTES )
+#define PRV_DER_MAX_BYTES   ( RSA_PRV_DER_MAX_BYTES > ECP_PRV_DER_MAX_BYTES ? \
+                              RSA_PRV_DER_MAX_BYTES : ECP_PRV_DER_MAX_BYTES )
 
 int mbedtls_pk_write_pubkey_pem( mbedtls_pk_context *key, unsigned char *buf, size_t size )
 {
     int ret;
     unsigned char output_buf[PUB_DER_MAX_BYTES];
     size_t olen = 0;
+
+    PK_VALIDATE_RET( key != NULL );
+    PK_VALIDATE_RET( buf != NULL || size == 0 );
 
     if( ( ret = mbedtls_pk_write_pubkey_der( key, output_buf,
                                      sizeof(output_buf) ) ) < 0 )
@@ -403,6 +552,9 @@ int mbedtls_pk_write_key_pem( mbedtls_pk_context *key, unsigned char *buf, size_
     unsigned char output_buf[PRV_DER_MAX_BYTES];
     const char *begin, *end;
     size_t olen = 0;
+
+    PK_VALIDATE_RET( key != NULL );
+    PK_VALIDATE_RET( buf != NULL || size == 0 );
 
     if( ( ret = mbedtls_pk_write_key_der( key, output_buf, sizeof(output_buf) ) ) < 0 )
         return( ret );

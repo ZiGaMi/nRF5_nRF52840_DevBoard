@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -49,27 +49,42 @@
 #ifndef OCRYPTO_CURVE_P256_H
 #define OCRYPTO_CURVE_P256_H
 
+#include "ocrypto_sc_p256.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ocrypto_sc_p256.h"
-
+/**@cond */
 
 // (x,y) only jacobian coordinates
-/**@cond */
 typedef struct {
     ocrypto_mod_p256 x;
     ocrypto_mod_p256 y;
 } ocrypto_cp_p256;
+
+// P-256 invert context
+typedef struct {
+    ocrypto_mod_p256 x, x3, xn, t;
+    int step;
+} ocrypto_p256_invert_context;
+
+
+typedef struct {
+    ocrypto_cp_p256 p, q0, q1;
+    uint32_t e[8]; // bits 0-255 of extended scalar, bit 256 = ~bit 255
+    ocrypto_p256_invert_context inv;
+    int ret, prev, dec, step;
+} ocrypto_p256_mult_context;
 /**@endcond */
+
 
 /** Load r.x from bytes, keep r.y.
  *
  * @param[out]      r       Point with r.x loaded, r.y kept.
  * @param           p       x as as array of bytes.
  *
- * @retval 0  If @p r is a legal curve point.
+ * @retval 0  If @p r is a valid curve point.
  * @retval -1 Otherwise.
  */
 int ocrypto_curve_p256_from32bytes(ocrypto_cp_p256 *r, const uint8_t p[32]);
@@ -80,7 +95,7 @@ int ocrypto_curve_p256_from32bytes(ocrypto_cp_p256 *r, const uint8_t p[32]);
  * @param[out]      r       Loaded point.
  * @param           p       Point as array of bytes.
  *
- * @retval 0  If @p r is a legal curve point.
+ * @retval 0  If @p r is a valid curve point.
  * @retval -1 Otherwise.
  */
 int ocrypto_curve_p256_from64bytes(ocrypto_cp_p256 *r, const uint8_t p[64]);
@@ -132,6 +147,6 @@ int ocrypto_curve_p256_scalarmult_base(ocrypto_cp_p256 *r, const ocrypto_sc_p256
 }
 #endif
 
-#endif
+#endif /* #ifndef OCRYPTO_CURVE_P256_H */
 
 /** @} */
