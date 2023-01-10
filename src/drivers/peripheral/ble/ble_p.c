@@ -430,15 +430,17 @@ static void adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
     {
         // Advertisement START
         case BLE_ADV_EVT_FAST:
-           
-            //bsp_board_led_on( BSP_BOARD_LED_0 );
+
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_ADV_START );
 
             break;
         
         // Advertisement STOP
         case BLE_ADV_EVT_IDLE:
 
-            //bsp_board_led_off( BSP_BOARD_LED_0 );
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_ADV_END );
 
             break;
 
@@ -805,9 +807,15 @@ static void custom_service_init(void)
 
 
 
+////////////////////////////////////////////////////////////////////////////////
 /**
- *      BLE HANDLER
- */
+*		Main BLE event handler
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @param[in] 	p_context   - Pointer to context
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
 static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 {
     // Handle BLE events
@@ -821,12 +829,8 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
             // Connection lost
             g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
         
-            // Status
-           // bsp_board_led_off( BSP_BOARD_LED_1 );
-            led_set( eLED_2, eLED_OFF );
-
-            // TODO: Raise callback on disconnect
-
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_DISCONNECT );
 
             break;
 
@@ -838,38 +842,63 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
             // Assing connection info to handle
             g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             
-            // TODO: Check if needed this call!
+            // Assign a connection handle to a given instance of the Queued Writes module
             if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
             {
-                error_handler();
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
+                BLE_P_ASSERT( 0 );
             }
 
-            led_set( eLED_2, eLED_ON );
-
-
-            // TODO: Raise callback on connect
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_CONNECT );
 
             break;
 
-
+        /**
+         *      PHY Update Procedure is complete
+         *
+         * @note    This event must be handler in order not to lose connection 
+         *          with peer. If this event is not handled the connection
+         *          will timeout.
+         *
+         *          Further details: https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s132.api.v7.2.0%2Fgroup___b_l_e___g_a_p___p_e_r_i_p_h_e_r_a_l___p_h_y___u_p_d_a_t_e.html&cp=4_7_3_1_2_1_5_7_1
+         */
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
             
+            // Set to auto option for PHY
             const ble_gap_phys_t phys = 
             {
                 .rx_phys = BLE_GAP_PHY_AUTO,
                 .tx_phys = BLE_GAP_PHY_AUTO,
             };
 
+            // Update PHY
             if ( NRF_SUCCESS != sd_ble_gap_phy_update( p_ble_evt->evt.gap_evt.conn_handle, &phys))
             {
-                error_handler();
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: PHY update error!" );
+                BLE_P_ASSERT( 0 );
             }
 
             break;
 
+        /**
+         *      A persistent system attribute access is pending
+         */
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-            ret_code_t err_code = sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0);
-            APP_ERROR_CHECK(err_code);
+
+            // Update persistent system attribute information
+            if ( NRF_SUCCESS != sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0))
+            {
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: Setting SYSTEM_ATTRIBUTES error!" );
+                BLE_P_ASSERT( 0 );
+            }
+
             break;
 
 
@@ -899,6 +928,9 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
                         break;
                     }
                 }
+
+                // Raise callback
+                ble_p_evt_cb( eBLE_P_EVT_RX_DATA );
             }
 
         break;
@@ -1168,8 +1200,20 @@ ble_p_status_t ble_p_get(uint8_t * const p_data)
     return status;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral events
+*
+* @param[in]	event	- Event type
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+__attribute__((weak)) void ble_p_evt_cb(const ble_p_evt_t event)
+{
+    /**
+     * 	Leave empty for user application purposes...
+     */
+}
 
 
 

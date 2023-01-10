@@ -43,6 +43,17 @@ typedef enum
     eBLE_P_ERROR    = 0x01,     /**<General error code */
 } ble_p_status_t;
 
+/**
+ *  BLE Peripheral events
+ */
+typedef enum
+{
+    eBLE_P_EVT_CONNECT  = 0,    /**<Peer connected event */
+    eBLE_P_EVT_DISCONNECT,      /**<Peer dis-connected event */
+    eBLE_P_EVT_RX_DATA,         /**<Client writes to Rx characteristics */
+    eBLE_P_EVT_ADV_START,       /**<Advertising started event */
+    eBLE_P_EVT_ADV_END,         /**<Advertising ended event */
+} ble_p_evt_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -57,6 +68,10 @@ ble_p_status_t ble_p_is_adv             (bool * const p_is_adv);
 ble_p_status_t ble_p_is_connected   (bool * const p_is_conn);
 ble_p_status_t ble_p_write          (const uint8_t * const p_data, const uint16_t len);
 ble_p_status_t ble_p_get            (uint8_t * const p_data);
+
+void ble_p_evt_cb(const ble_p_evt_t event);
+
+
 
 
 // TODO: Omit this no need...

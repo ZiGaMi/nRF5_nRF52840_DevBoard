@@ -223,6 +223,50 @@ void app_hndl_1000ms(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		BLE Peripheral events
+*
+* @param[in]	event	- Event type
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+void ble_p_evt_cb(const ble_p_evt_t event)
+{
+    // Based on event
+    switch( event )
+    {
+        /**<Peer connected event */
+        case eBLE_P_EVT_CONNECT:
+            led_set_smooth( eLED_2, eLED_ON );
+            break;
+
+        /**<Peer dis-connected event */
+        case eBLE_P_EVT_DISCONNECT:
+            led_set_smooth( eLED_2, eLED_OFF );
+            break;
+        
+        /**<Client writes to Rx characteristics */
+        case eBLE_P_EVT_RX_DATA:
+            led_blink_smooth( eLED_3, 0.10f, 0.20f, eLED_BLINK_2X );
+            break;
+
+        /**<Advertising started event */
+        case eBLE_P_EVT_ADV_START:
+            led_blink_smooth( eLED_2, 0.5f, 1.0f, eLED_BLINK_CONTINUOUS );
+            break;
+
+        /**<Advertising ended event */
+        case eBLE_P_EVT_ADV_END:
+            led_set_smooth( eLED_2, eLED_OFF );
+            break;
+
+        default:
+            // No actions...
+            break;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *     Setup LED fade configs
 *
 * @return   void
