@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +27,8 @@
 #include "drivers/peripheral/uart/uart.h"
 #include "drivers/peripheral/usb_cdc/usb_cdc.h"
 #include "drivers/peripheral/timer/timer.h"
+
+#include "drivers/peripheral/ble/ble_p.h"
 
 // HMI
 #include "drivers/hmi/button/button/src/button.h"
@@ -147,6 +149,9 @@ void app_init(void)
         cli_printf_ch( eCLI_CH_APP, "UART1 init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
+
+
+    ble_p_init();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,6 +199,9 @@ void app_hndl_100ms(void)
 void app_hndl_1000ms(void)
 {
     // Further actions here...
+
+
+    ble_p_hndl();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

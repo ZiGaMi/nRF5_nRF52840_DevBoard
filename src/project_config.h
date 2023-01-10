@@ -30,7 +30,7 @@
 /**
  *  Enable/Disable WDT
  */
-#define PROJECT_CONFIG_WDT_EN           ( 1 )
+#define PROJECT_CONFIG_WDT_EN           ( 0 )
 
 // Float definition
 typedef float float32_t;

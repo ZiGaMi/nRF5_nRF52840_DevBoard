@@ -96,6 +96,12 @@
           <file file_name="src/drivers/peripheral/adc/adc.c" />
           <file file_name="src/drivers/peripheral/adc/adc.h" />
         </folder>
+        <folder Name="ble">
+          <file file_name="src/drivers/peripheral/ble/ble_c.c" />
+          <file file_name="src/drivers/peripheral/ble/ble_c.h" />
+          <file file_name="src/drivers/peripheral/ble/ble_p.c" />
+          <file file_name="src/drivers/peripheral/ble/ble_p.h" />
+        </folder>
         <folder Name="gpio">
           <file file_name="src/drivers/peripheral/gpio/gpio.c" />
           <file file_name="src/drivers/peripheral/gpio/gpio.h" />
