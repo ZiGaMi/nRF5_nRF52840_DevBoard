@@ -1,10 +1,13 @@
+// Copyright (c) 2022 Ziga Miklosic
+// All Rights Reserved
+// This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *@file      project_config.h
 *@brief     Project configurations
 *@author    Ziga Miklosic
 *@date      01.08.2022
-*@project	Cineline Pedal Adapter
+*@project	Base code for nRF5_nRF52840_DevBoard
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
