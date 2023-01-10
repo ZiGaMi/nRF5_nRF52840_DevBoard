@@ -208,7 +208,7 @@ void app_hndl_1000ms(void)
     // Further actions here...
 
 
-    ble_p_hndl();
+    //ble_p_hndl();
 
 
     // TEST CODE
@@ -258,7 +258,13 @@ static void app_btn_1_pressed(void)
 	par_set( ePAR_BTN_1, (uint8_t*) &(uint8_t){1} );
 
 	// Further actions here...
+    
 
+    static uint8_t cnt[5] = {0};
+
+    cnt[1]++;
+
+    ble_p_write((const uint8_t*) &cnt, 5 );
     
 
 }

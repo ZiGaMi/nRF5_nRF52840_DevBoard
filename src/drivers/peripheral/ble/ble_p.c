@@ -67,6 +67,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ *      BLE Peripheral data
+ */
+typedef struct
+{
+    uint16_t conn_handle;       /**< Connection Handle on which event occurred */
+
+
+} ble_p_data_t;
+
+
+/**
  *		BLE Peripheral reception buffer size
  *
  *	Unit: byte
@@ -235,23 +246,31 @@
 static bool gb_is_init = false;
 
 /**
- * 	Reception buffer space
+ *      Reception buffer space
  */
 static uint8_t gu8_ble_rx_buffer[BLE_P_RX_BUF_SIZE] = {0};
 
 /**
- * 	UART Rx buffer
+ *      UART Rx buffer
  */
 static p_ring_buffer_t 		g_rx_buf = NULL;
-const ring_buffer_attr_t 	g_rx_buf_attr = { 	.name 		= "BLE P Rx Buf",
-                                                .item_size 	= sizeof(uint8_t),
-                                                .override 	= false,
-                                                .p_mem 		= &gu8_ble_rx_buffer 
-                                            };
+const ring_buffer_attr_t 	g_rx_buf_attr = 
+{ 	
+    .name 		= "BLE P Rx Buf",
+    .item_size 	= sizeof(uint8_t),
+    .override 	= false,
+    .p_mem 		= &gu8_ble_rx_buffer 
+};
 
+/**
+ *      BLE Peripheral data
+ */
+static ble_p_data_t g_ble_p = 
+{ 
+    .conn_handle = BLE_CONN_HANDLE_INVALID,
 
-
-
+};
+    
 
 
 
@@ -270,7 +289,7 @@ BLE_ADVERTISING_DEF( m_advertising );
 
 
 // TODO: Check if can be omited!
-static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
+//static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 
 #define ADV_DATA_SIZE       ( 15 )
@@ -539,53 +558,6 @@ static ret_code_t advertisement_init(void)
 }
 
 
-// Init advertisment
-
-static uint8_t              m_adv_handle    = BLE_GAP_ADV_SET_HANDLE_NOT_SET; /**< Advertising handle used to identify an advertising set. */
-static ble_gap_adv_data_t   m_adv_data      = {0};
-
-static ret_code_t advertisement_2_init(void)
-{
-    ret_code_t              status      = NRF_SUCCESS;
-    ble_advdata_t           advdata     = {0};
-    ble_advdata_t           srdata      = {0};
-    ble_gap_adv_params_t    adv_params  = {0};
-
-
-    advdata.name_type               = BLE_ADVDATA_FULL_NAME;
-    advdata.include_appearance      = false;
-    advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
-
-    if ( NRF_SUCCESS != ble_advdata_encode( &advdata, m_adv_data.adv_data.p_data, &m_adv_data.adv_data.len ))
-    {
-        // Further actions on error... 
-        error_handler();  
-    }
-
-    adv_params.primary_phy      = BLE_GAP_PHY_CODED;
-    adv_params.secondary_phy    = BLE_GAP_PHY_CODED;
-    adv_params.properties.type  = BLE_GAP_ADV_TYPE_EXTENDED_CONNECTABLE_NONSCANNABLE_UNDIRECTED;
-
-    adv_params.duration         = (uint32_t) ( GAP_ADV_DURATION_MS / 10.0f );
-    adv_params.interval         = (uint32_t) ( GAP_ADV_INTERVAL_MS / 0.625f );
-    adv_params.p_peer_addr      = NULL;
-    adv_params.filter_policy    = BLE_GAP_ADV_FP_ANY;
-
-    if ( NRF_SUCCESS != sd_ble_gap_adv_set_configure( &m_adv_handle, &m_adv_data, &adv_params ))
-    {
-        // Further actions on error... 
-        error_handler();  
-    }
-
-    if ( NRF_SUCCESS != sd_ble_gap_tx_power_set( BLE_GAP_TX_POWER_ROLE_ADV, m_adv_handle, 0 ))
-    {
-        // Further actions on error... 
-        error_handler();  
-    }
-
-    return status;
-}
-
 
 static void advertisement_start(void)
 {
@@ -596,14 +568,6 @@ static void advertisement_start(void)
     }
 }
 
-static void advertisement_2_start(void)
-{
-    if ( NRF_SUCCESS != sd_ble_gap_adv_start( m_adv_handle, BLE_CONN_CFG_TAG ))
-    {
-        // Further actions on error... 
-        error_handler();  
-    }
-}
 
 
 static void nrf_qwr_error_hndl(uint32_t nrf_error)
@@ -650,7 +614,7 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
     
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
     {
-        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
+        err_code = sd_ble_gap_disconnect( g_ble_p.conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE );
         
         // TODO: 
         //APP_ERROR_CHECK(err_code);
@@ -846,33 +810,44 @@ static void custom_service_init(void)
  */
 static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 {
-    
+    // Handle BLE events
     switch( p_ble_evt->header.evt_id )
     {
+        /**
+         *      Disconnected from peer event
+         */
         case BLE_GAP_EVT_DISCONNECTED:
+
+            // Connection lost
+            g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
         
             // Status
            // bsp_board_led_off( BSP_BOARD_LED_1 );
             led_set( eLED_2, eLED_OFF );
 
+            // TODO: Raise callback on disconnect
+
 
             break;
 
-
+        /**
+         *      Connected to peer event
+         */
         case BLE_GAP_EVT_CONNECTED:
 
-            led_set( eLED_2, eLED_ON );
-            
-            // Status 
-            //bsp_board_led_on( BSP_BOARD_LED_1 );
-
             // Assing connection info to handle
-            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-
-            if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, m_conn_handle ))
+            g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+            
+            // TODO: Check if needed this call!
+            if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
             {
                 error_handler();
             }
+
+            led_set( eLED_2, eLED_ON );
+
+
+            // TODO: Raise callback on connect
 
             break;
 
@@ -893,14 +868,14 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
             break;
 
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-            ret_code_t err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
+            ret_code_t err_code = sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0);
             APP_ERROR_CHECK(err_code);
             break;
 
 
         case BLE_GATTS_EVT_WRITE:
 
-           // bsp_board_led_invert( BSP_BOARD_LED_3 );
+
 
             // Client write to RX characteristics?
             if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
@@ -910,6 +885,9 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
                 const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
                 const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
 
+                // Debug message
+                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
+
                 // Add to RX fifo
                 for (uint16_t idx = 0; idx < len; idx++)
                 {
@@ -917,11 +895,10 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
                     {
                         // Buffer overflow!
                         BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
+                        
+                        break;
                     }
                 }
-
-                // Debug message
-                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
             }
 
         break;
@@ -1067,7 +1044,14 @@ ble_p_status_t ble_p_is_connected(bool * const p_is_conn)
 
     if ( NULL != p_is_conn )
     {
-        // TODO: Return connectiojn status
+        if ( g_ble_p.conn_handle == BLE_CONN_HANDLE_INVALID )
+        {
+            *p_is_conn = false;
+        }
+        else
+        {
+            *p_is_conn = true; 
+        }
     }
     else
     {
@@ -1096,10 +1080,41 @@ ble_p_status_t ble_p_is_connected(bool * const p_is_conn)
 ble_p_status_t ble_p_write(const uint8_t * const p_data, const uint16_t len)
 {
     ble_p_status_t status = eBLE_P_OK;
+    bool            is_connected    = false;
 
-    // TODO: Assert if connection is not established!!!
+    BLE_P_ASSERT( true == gb_is_init );
+	BLE_P_ASSERT( NULL != p_data );
+	BLE_P_ASSERT( len > 0 );
 
-    // TODO: ...
+    // Get connection status
+    (void) ble_p_is_connected( &is_connected );
+
+    BLE_P_ASSERT( true == is_connected );
+
+	if	(	( true == gb_is_init ) 
+		&&	( NULL != p_data )
+        &&  ( len > 0 )
+        &&  ( true == is_connected ))
+	{
+        // Prepare notification data
+        const ble_gatts_hvx_params_t hvx_params_tx = 
+        {
+            .handle     = tx_char_handles.value_handle,
+            .p_data     = (uint8_t*) p_data,
+            .p_len      = (uint16_t*) &len,
+            .type       = BLE_GATT_HVX_NOTIFICATION
+        };
+
+        // Push data to client via Notify
+        if ( NRF_SUCCESS != sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params_tx ))
+        {
+            status = eBLE_P_ERROR;
+        }
+	}
+	else
+	{
+		status = eBLE_P_ERROR;
+	}
 
     return status;
 }
@@ -1124,15 +1139,20 @@ ble_p_status_t ble_p_write(const uint8_t * const p_data, const uint16_t len)
 ////////////////////////////////////////////////////////////////////////////////
 ble_p_status_t ble_p_get(uint8_t * const p_data)
 {
-    ble_p_status_t status = eBLE_P_OK;
-
-    // TODO: Assert if connection is not established!!!
+    ble_p_status_t  status          = eBLE_P_OK;
+    bool            is_connected    = false;
 
     BLE_P_ASSERT( true == gb_is_init );
 	BLE_P_ASSERT( NULL != p_data );
 
+    // Get connection status
+    (void) ble_p_is_connected( &is_connected );
+
+    BLE_P_ASSERT( true == is_connected );
+
 	if	(	( true == gb_is_init ) 
-		&&	( NULL != p_data ))
+		&&	( NULL != p_data )
+        &&  ( true == is_connected ))
 	{
 		// Get from buffer
 		if ( eRING_BUFFER_OK != ring_buffer_get( g_rx_buf, p_data ))
@@ -1200,7 +1220,7 @@ void ble_p_hndl(void)
 
 
     // Send value if connected and notifying
-    if ( m_conn_handle != BLE_CONN_HANDLE_INVALID )
+    if ( g_ble_p.conn_handle != BLE_CONN_HANDLE_INVALID )
     {
 
         encoded_hrm[4]++;
@@ -1210,7 +1230,7 @@ void ble_p_hndl(void)
         ret_code_t status = NRF_SUCCESS;
         
         // Send
-        status = sd_ble_gatts_hvx( m_conn_handle, &hvx_params );
+        status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params );
 
         //if ( NRF_SUCCESS != sd_ble_gatts_hvx( m_conn_handle, &hvx_params ))
         if ( NRF_SUCCESS != status )
@@ -1223,7 +1243,7 @@ void ble_p_hndl(void)
         
 
         
-        status = sd_ble_gatts_hvx( m_conn_handle, &hvx_params_tx );
+        status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params_tx );
 
         if ( NRF_SUCCESS != status )
         {
