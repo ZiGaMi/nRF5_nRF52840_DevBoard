@@ -7,6 +7,10 @@
 *@author    Ziga Miklosic
 *@date      10.01.2023
 *@version   V1.0.0
+*
+*@note      This file shall be in following directory:
+*           
+*               /drivers/peripheral/ble
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**

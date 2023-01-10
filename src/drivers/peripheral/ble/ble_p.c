@@ -7,6 +7,10 @@
 *@author    Ziga Miklosic
 *@date      10.01.2023
 *@version   V1.0.0
+*
+*@note      This file shall be in following directory:
+*           
+*               /drivers/peripheral/ble
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -21,6 +25,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "project_config.h"
+
+#include "ble_p.h"
+
+
 
 
 #include "app_timer.h"
@@ -47,9 +55,81 @@
 #include "drivers/hmi/led/led/src/led.h"
 
 
+
+
+// Debug COM port
+#include "middleware/cli/cli/src/cli.h"
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *		BLE Peripheral reception buffer size
+ *
+ *	Unit: byte
+ */                     
+#define BLE_P_RX_BUF_SIZE                   ( 512 )  
+
+/**
+ * 	Enable/Disable debug mode
+ *
+ * 	@note	Disable in release!
+ */
+#define BLE_P_DEBUG_EN						( 1 )
+
+#ifndef DEBUG
+    #undef BLE_P_DEBUG_EN
+    #define BLE_P_DEBUG_EN 0
+#endif
+
+/**
+ *  Enable/Disable assertion
+ *
+ *  @note   Disble in release!
+ */
+ #define BLE_P_ASSERT_EN                    ( 1 )
+
+#ifndef DEBUG
+    #undef PAR_CFG_ASSERT_EN
+    #define PAR_CFG_ASSERT_EN 0
+#endif
+
+/**
+ * 	Debug communication port macros
+ */
+#if ( 1 == BLE_P_DEBUG_EN )
+	#define BLE_P_DBG_PRINT( ... )			( cli_printf( __VA_ARGS__ ))
+#else
+	#define BLE_P_DBG_PRINT( ... )			{ ; }
+
+#endif
+
+/**
+ *  Assertion definition
+ */
+ #if ( BLE_P_ASSERT_EN )
+	#define BLE_P_ASSERT(x)                 { PROJECT_CONFIG_ASSERT(x) }
+ #else
+  #define BLE_P_ASSERT)                     { ; }
+ #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -147,6 +227,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Initialization guards
+ */
+static bool gb_is_init = false;
+
+
 
 
 // For single connected device
@@ -544,7 +631,9 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
     {
         err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-        APP_ERROR_CHECK(err_code);
+        
+        // TODO: 
+        //APP_ERROR_CHECK(err_code);
     }
 }
 
@@ -555,7 +644,8 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
  */
 static void conn_params_error_handler(uint32_t nrf_error)
 {
-    APP_ERROR_HANDLER(nrf_error);
+    // TODO: 
+   // APP_ERROR_HANDLER(nrf_error);
 }
 
 
@@ -839,8 +929,11 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 
 
 
-void ble_p_init(void)
+
+ble_p_status_t ble_p_init(void)
 {
+    ble_p_status_t status = eBLE_P_OK;
+
     // Init BLE stuff
     ble_stack_init();
     gap_init();
@@ -859,7 +952,123 @@ void ble_p_init(void)
     // Start advertising     
     advertisement_start();
 
+
+    return status;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral get init status
+*
+* @param[out] 	p_is_conn   - Connection status, true if initiated
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_is_init (bool * const p_is_init)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    if ( NULL != p_is_init )
+    {
+        *p_is_init = gb_is_init;
+    }
+    else
+    {
+        status = eBLE_P_ERROR;
+    }
+
+    return status;  
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral get connection status
+*
+* @param[out] 	p_is_conn   - Connection status, true if connected
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_is_connected(bool * const p_is_conn)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    if ( NULL != p_is_conn )
+    {
+        // TODO: Return connectiojn status
+    }
+    else
+    {
+        status = eBLE_P_ERROR;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral write 
+*	
+* @note     This function push data to GATTS Tx characteristics.
+*
+* @note     Tx characteristics is defined as server-initiated update with
+*           "Notification" type. 
+*
+* @note     This function shall not be called if connection is not established!
+*
+* @param[in] 	p_data      - Pointer to data for transmit
+* @param[in] 	len         - Lenght of data in bytes
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_write(const uint8_t * const p_data, const uint16_t len)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    // TODO: Assert if connection is not established!!!
+
+    // TODO: ...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral read
+*	
+* @note     This function retrives data from GATTS Rx characteristics.
+*
+* @note     Rx characteristics is defined as read-only, therefore only client
+*           can write to characteristics value.
+*
+* @note     This function shall not be called if connection is not established!
+*
+* @note     Returned data is taken from local FIFO buffer storage. In case reception
+*           FIFO is empty it return ERROR code, otherwise OK.
+*
+* @param[out] 	p_data      - Pointer to data for transmit
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_get(uint8_t * const p_data)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    // TODO: Assert if connection is not established!!!
+
+    // TODO: ...
+
+    return status;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
