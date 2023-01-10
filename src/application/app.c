@@ -137,21 +137,28 @@ void app_init(void)
         cli_printf_ch( eCLI_CH_APP, "PAR init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
-
+    
+    // Init USB CDC Class
     if ( eUSB_CDC_OK != usb_cdc_init())
     {
         cli_printf_ch( eCLI_CH_APP, "USB CDC init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
     }
 
+    // Init UART 1
 	if ( eUART_OK != uart_1_init())
 	{
         cli_printf_ch( eCLI_CH_APP, "UART1 init error!" );
 		PROJECT_CONFIG_ASSERT( 0 );
 	}
+    
+    // Init BLE Peripheral device
+    if ( eBLE_P_OK != ble_p_init())
+    {
+        cli_printf_ch( eCLI_CH_APP, "BLE Peripheral init error!" );
+		PROJECT_CONFIG_ASSERT( 0 );
+    }
 
-
-    ble_p_init();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,6 +209,16 @@ void app_hndl_1000ms(void)
 
 
     ble_p_hndl();
+
+
+    // TEST CODE
+    /*
+    uint8_t ble_rx_data;    
+    while( eBLE_P_OK == ble_p_get( &ble_rx_data ))
+    {
+        cli_printf("BLE RX: 0x%02X", ble_rx_data );
+    }
+    */
 }
 
 ////////////////////////////////////////////////////////////////////////////////

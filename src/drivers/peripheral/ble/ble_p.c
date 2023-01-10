@@ -27,6 +27,7 @@
 #include "project_config.h"
 
 #include "ble_p.h"
+#include "middleware/ring_buffer/src/ring_buffer.h"
 
 
 
@@ -229,9 +230,28 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initialization guards
+ *      Initialization guards
  */
 static bool gb_is_init = false;
+
+/**
+ * 	Reception buffer space
+ */
+static uint8_t gu8_ble_rx_buffer[BLE_P_RX_BUF_SIZE] = {0};
+
+/**
+ * 	UART Rx buffer
+ */
+static p_ring_buffer_t 		g_rx_buf = NULL;
+const ring_buffer_attr_t 	g_rx_buf_attr = { 	.name 		= "BLE P Rx Buf",
+                                                .item_size 	= sizeof(uint8_t),
+                                                .override 	= false,
+                                                .p_mem 		= &gu8_ble_rx_buffer 
+                                            };
+
+
+
+
 
 
 
@@ -890,11 +910,18 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
                 const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
                 const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
 
-                // Test code
-                if ( p_data[0] == 0xAA )
+                // Add to RX fifo
+                for (uint16_t idx = 0; idx < len; idx++)
                 {
-                   // bsp_board_led_invert( BSP_BOARD_LED_1 );
+                    if ( eRING_BUFFER_OK != ring_buffer_add( g_rx_buf, (uint8_t*) &p_data[idx] ))
+                    {
+                        // Buffer overflow!
+                        BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
+                    }
                 }
+
+                // Debug message
+                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
             }
 
         break;
@@ -929,10 +956,48 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral Initialize
+*
+* @brief    BLE peripheral module creates custom service and with two 
+*           characteristics:
+*
+*               1. TX Characteristics: for pushing data to client
+*               2. RX Characteristics: for receiveing data from client
+*
+*           Basic client-server model:
+*
+*                           write to RX characteristic
+*               CLIENT -----------------------------------> SERVER
+*        (central BLE device)                        (peripheral BLE device)
+*
+*
+*                        notification to TX characteristic
+*               CLIENT <----------------------------------- SERVER
+*        (central BLE device)                        (peripheral BLE device)
+*
+*
+*           Implemented communication sheme is emulating simple UART interface.
+*
+*       
+* @note     TX Characteristics is defined as notification, therefore client
+*           must first enable CCCD (Client Characteristics Configuration Descriptor)
+*           before it can receive notifications!
+*
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
 ble_p_status_t ble_p_init(void)
 {
     ble_p_status_t status = eBLE_P_OK;
+
+    // Init Rx buffer
+	if ( eRING_BUFFER_OK != ring_buffer_init( &g_rx_buf, BLE_P_RX_BUF_SIZE, &g_rx_buf_attr ))
+	{
+		status = eBLE_P_ERROR;
+	}
+
 
     // Init BLE stuff
     ble_stack_init();
@@ -951,6 +1016,14 @@ ble_p_status_t ble_p_init(void)
 
     // Start advertising     
     advertisement_start();
+
+
+    // Init success
+    if ( eBLE_P_OK == status )
+    {
+        gb_is_init = true;
+    }
+
 
 
     return status;
@@ -1055,7 +1128,22 @@ ble_p_status_t ble_p_get(uint8_t * const p_data)
 
     // TODO: Assert if connection is not established!!!
 
-    // TODO: ...
+    BLE_P_ASSERT( true == gb_is_init );
+	BLE_P_ASSERT( NULL != p_data );
+
+	if	(	( true == gb_is_init ) 
+		&&	( NULL != p_data ))
+	{
+		// Get from buffer
+		if ( eRING_BUFFER_OK != ring_buffer_get( g_rx_buf, p_data ))
+		{
+			status = eBLE_P_ERROR;
+		}
+	}
+	else
+	{
+		status = eBLE_P_ERROR;
+	}
 
     return status;
 }

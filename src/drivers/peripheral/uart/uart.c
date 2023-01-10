@@ -84,7 +84,7 @@ static bool gb_is_init = false;
   */
   static uint8_t gu8_uart1_rx_buf = 0;
 
-  /**
+/**
  * 	UART Rx/Tx buffer space
  */
 static uint8_t gu8_uart1_tx_buffer[UART_1_TX_BUF_SIZE] = {0};
