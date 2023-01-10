@@ -304,11 +304,11 @@ static void app_btn_1_pressed(void)
 	// Further actions here...
     
 
-    static uint8_t cnt[5] = {0};
+    static uint8_t cnt[200] = {0};
 
     cnt[1]++;
 
-    ble_p_write((const uint8_t*) &cnt, 5 );
+    ble_p_write((const uint8_t*) &cnt, 200 );
     
 
 }

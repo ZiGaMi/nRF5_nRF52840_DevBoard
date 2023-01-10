@@ -305,62 +305,214 @@ static ble_uuid_t m_adv_uuids[] =
 
 
 
+static ble_gatts_char_handles_t    char_handles    = {0};
+
+#define THERMOSTAT_SERVICE_BASE                                                \
+  {                                                                            \
+    0x2A, 0x94, 0x01, 0x0a, 0x34, 0xc4, 0x3e, 0xbc, 0xe5, 0x4b, 0xb3, 0x8b,    \
+        0x00, 0x00, 0x9d, 0xaf                                                 \
+  }
+
+#define THERMOSTAT_SERVICE_UUID   0x1000
+
+
+#define BLE_THERMOSTAT_RX_CHARACTERISTIC   0x1001
+#define BLE_THERMOSTAT_TX_CHARACTERISTIC   0x1002
+
+static ble_gatts_char_handles_t    rx_char_handles    = {0};
+static ble_gatts_char_handles_t    tx_char_handles    = {0};
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t   ble_p_stack_init    (void);
+static void             ble_p_evt_hndl      (ble_evt_t const * p_ble_evt, void * p_context);
 
-static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context);
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
-
+////////////////////////////////////////////////////////////////////////////////
 /**
- *      ERROR HANDLER
- */
-static void error_handler(void)
+*		Initialize BLE peripheral stack
+*
+* @return 		status - Status of initialization
+*/
+////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t ble_p_stack_init(void)
 {
-    PROJECT_CONFIG_ASSERT(0);
-}
+    ble_p_status_t  status      = eBLE_P_OK;
+    uint32_t        ram_start   = 0;  // Application RAM start address
 
-
-// Init BLE
-static ret_code_t ble_stack_init(void)
-{
-    ret_code_t status = NRF_SUCCESS;
-    
     // Start SoftDevice
     if ( NRF_SUCCESS != nrf_sdh_enable_request())
     {
-        // Further actions on error...
-        error_handler();
+        status = eBLE_P_ERROR;
+        
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable request error!" );
     }
-
-    // Application RAM start address
-    uint32_t ram_start = 0;
 
     // Configure BLE stack
     if ( NRF_SUCCESS != nrf_sdh_ble_default_cfg_set( BLE_CONN_CFG_TAG, &ram_start ))
     {
-        // Further actions on error... 
-        error_handler();
+        status = eBLE_P_ERROR;
+        
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice default config set error!" );
     }
 
     // Enable BLE stack
     if ( NRF_SUCCESS != nrf_sdh_ble_enable( &ram_start ))
     {
-        // Further actions on error... 
-        error_handler();
+        status = eBLE_P_ERROR;
+        
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
     
     // Register BLE event callback
-    // ZIGA: An observer is essentially a piece of code that listens for events.
-    NRF_SDH_BLE_OBSERVER(m_ble_observer, BLE_EVENT_PRIORITY, ble_evt_hndl, NULL);
+    // An observer is essentially a piece of code that listens for events.
+    NRF_SDH_BLE_OBSERVER( m_ble_observer, BLE_EVENT_PRIORITY, ble_p_evt_hndl, NULL );
 
     return status;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Main BLE event handler
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @param[in] 	p_context   - Pointer to context
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
+{
+    // Handle BLE events
+    switch( p_ble_evt->header.evt_id )
+    {
+        /**
+         *      Disconnected from peer event
+         */
+        case BLE_GAP_EVT_DISCONNECTED:
+
+            // Connection lost
+            g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
+        
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_DISCONNECT );
+
+            break;
+
+        /**
+         *      Connected to peer event
+         */
+        case BLE_GAP_EVT_CONNECTED:
+
+            // Assing connection info to handle
+            g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+            
+            // Assign a connection handle to a given instance of the Queued Writes module
+            if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
+            {
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
+                BLE_P_ASSERT( 0 );
+            }
+
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_CONNECT );
+
+            break;
+
+        /**
+         *      PHY Update Procedure is complete
+         *
+         * @note    This event must be handler in order not to lose connection 
+         *          with peer. If this event is not handled the connection
+         *          will timeout.
+         *
+         *          Further details: https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s132.api.v7.2.0%2Fgroup___b_l_e___g_a_p___p_e_r_i_p_h_e_r_a_l___p_h_y___u_p_d_a_t_e.html&cp=4_7_3_1_2_1_5_7_1
+         */
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
+            
+            // Set to auto option for PHY
+            const ble_gap_phys_t phys = 
+            {
+                .rx_phys = BLE_GAP_PHY_AUTO,
+                .tx_phys = BLE_GAP_PHY_AUTO,
+            };
+
+            // Update PHY
+            if ( NRF_SUCCESS != sd_ble_gap_phy_update( p_ble_evt->evt.gap_evt.conn_handle, &phys))
+            {
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: PHY update error!" );
+                BLE_P_ASSERT( 0 );
+            }
+
+            break;
+
+        /**
+         *      A persistent system attribute access is pending
+         */
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+
+            // Update persistent system attribute information
+            if ( NRF_SUCCESS != sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0))
+            {
+                // TODO: How to handle this error???
+
+                BLE_P_DBG_PRINT( "BLE_P: Setting SYSTEM_ATTRIBUTES error!" );
+                BLE_P_ASSERT( 0 );
+            }
+
+            break;
+
+        /**
+         *      Write operation performed
+         */
+        case BLE_GATTS_EVT_WRITE:
+
+            // Client write to RX characteristics?
+            if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
+            {
+                // Get data and lenght
+                const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
+                const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
+
+                // Debug message
+                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
+
+                // Add to RX fifo
+                for (uint16_t idx = 0; idx < len; idx++)
+                {
+                    if ( eRING_BUFFER_OK != ring_buffer_add( g_rx_buf, (uint8_t*) &p_data[idx] ))
+                    {
+                        // Buffer overflow!
+                        BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
+                        
+                        break;
+                    }
+                }
+
+                // Raise callback
+                ble_p_evt_cb( eBLE_P_EVT_RX_DATA );
+            }
+
+        break;
+
+        default:
+            // No actions...
+            break;
+    }
+}
+
 
 
 
@@ -378,15 +530,18 @@ static ret_code_t gap_init(void)
     if ( NRF_SUCCESS != sd_ble_gap_device_name_set( &security_mode, (const uint8_t*) GAP_DEVICE_NAME, strlen(GAP_DEVICE_NAME)))
     {
         // Further actions on error... 
-        error_handler();
+        //error_handler();
+
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
     // Set the apperance
     // BLE_APPEARANCE_GENERIC_COMPUTER
     if ( NRF_SUCCESS != sd_ble_gap_appearance_set( BLE_APPEARANCE_GENERIC_GLUCOSE_METER ))  
     {
-        // Further actions on error... 
-        error_handler();
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
     // Set up GAP
@@ -398,8 +553,8 @@ static ret_code_t gap_init(void)
     // Set the PPCP - Peripheral Prefered Connection Parameters
     if ( NRF_SUCCESS != sd_ble_gap_ppcp_set( &gap_conn_params ))
     {
-        // Further actions on error... 
-        error_handler();        
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     return status;
@@ -413,8 +568,8 @@ static ret_code_t gatt_init(void)
 
     if ( NRF_SUCCESS != nrf_ble_gatt_init( &m_gatt, NULL ))
     { 
-        // Further actions on error... 
-        error_handler();   
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );  
     }
 
     return status;
@@ -549,8 +704,8 @@ static ret_code_t advertisement_init(void)
     // Init advertisement
     if ( NRF_SUCCESS != ble_advertising_init( &m_advertising, &adv_init ))
     {
-        // Further actions on error... 
-        error_handler(); 
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
     
     // Setup advertising config tag
@@ -565,8 +720,8 @@ static void advertisement_start(void)
 {
     if ( NRF_SUCCESS != ble_advertising_start( &m_advertising, BLE_ADV_MODE_FAST ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 }
 
@@ -590,8 +745,8 @@ static ret_code_t services_init(void)
     // Init QWR
     if ( NRF_SUCCESS != nrf_ble_qwr_init( &m_qwr, &qwr_init ))
     {
-        // Further actions on error... 
-        error_handler();    
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     return status;
@@ -653,8 +808,8 @@ static ret_code_t conn_pars_init(void)
 
     if ( NRF_SUCCESS != ble_conn_params_init( &cp_init ))
     {
-        // Further actions on error... 
-        error_handler();    
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     return status;
@@ -662,22 +817,6 @@ static ret_code_t conn_pars_init(void)
 
 
 
-static ble_gatts_char_handles_t    char_handles    = {0};
-
-#define THERMOSTAT_SERVICE_BASE                                                \
-  {                                                                            \
-    0x2A, 0x94, 0x01, 0x0a, 0x34, 0xc4, 0x3e, 0xbc, 0xe5, 0x4b, 0xb3, 0x8b,    \
-        0x00, 0x00, 0x9d, 0xaf                                                 \
-  }
-
-#define THERMOSTAT_SERVICE_UUID   0x1000
-
-
-#define BLE_THERMOSTAT_RX_CHARACTERISTIC   0x1001
-#define BLE_THERMOSTAT_TX_CHARACTERISTIC   0x1002
-
-static ble_gatts_char_handles_t    rx_char_handles    = {0};
-static ble_gatts_char_handles_t    tx_char_handles    = {0};
 
 static void custom_service_init(void)
 {
@@ -697,8 +836,8 @@ static void custom_service_init(void)
     // Register service
     if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &hrs_uuid, &hrs_handle ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
     
@@ -723,8 +862,8 @@ static void custom_service_init(void)
     // Register characteristics
     if ( NRF_SUCCESS != characteristic_add( hrs_handle, &char_params, &char_handles ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
 
@@ -744,15 +883,15 @@ static void custom_service_init(void)
 
     if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &base_uuid, &char_uuid.type ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     // Register service
     if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &char_uuid, &custom_service_handle ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
 
@@ -773,8 +912,8 @@ static void custom_service_init(void)
     // Register characteristics
     if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &rx_char_params, &rx_char_handles ))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     
@@ -797,149 +936,12 @@ static void custom_service_init(void)
     // Register characteristics
     if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &tx_char_params, &tx_char_handles))
     {
-        // Further actions on error... 
-        error_handler();  
+        // TODO: Change error status...
+        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
 }
 
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Main BLE event handler
-*
-* @param[in] 	p_ble_evt   - Pointer to BLE event informations
-* @param[in] 	p_context   - Pointer to context
-* @return 		void
-*/
-////////////////////////////////////////////////////////////////////////////////
-static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
-{
-    // Handle BLE events
-    switch( p_ble_evt->header.evt_id )
-    {
-        /**
-         *      Disconnected from peer event
-         */
-        case BLE_GAP_EVT_DISCONNECTED:
-
-            // Connection lost
-            g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
-        
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_DISCONNECT );
-
-            break;
-
-        /**
-         *      Connected to peer event
-         */
-        case BLE_GAP_EVT_CONNECTED:
-
-            // Assing connection info to handle
-            g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            
-            // Assign a connection handle to a given instance of the Queued Writes module
-            if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_CONNECT );
-
-            break;
-
-        /**
-         *      PHY Update Procedure is complete
-         *
-         * @note    This event must be handler in order not to lose connection 
-         *          with peer. If this event is not handled the connection
-         *          will timeout.
-         *
-         *          Further details: https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s132.api.v7.2.0%2Fgroup___b_l_e___g_a_p___p_e_r_i_p_h_e_r_a_l___p_h_y___u_p_d_a_t_e.html&cp=4_7_3_1_2_1_5_7_1
-         */
-        case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
-            
-            // Set to auto option for PHY
-            const ble_gap_phys_t phys = 
-            {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
-            };
-
-            // Update PHY
-            if ( NRF_SUCCESS != sd_ble_gap_phy_update( p_ble_evt->evt.gap_evt.conn_handle, &phys))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: PHY update error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
-            break;
-
-        /**
-         *      A persistent system attribute access is pending
-         */
-        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-
-            // Update persistent system attribute information
-            if ( NRF_SUCCESS != sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: Setting SYSTEM_ATTRIBUTES error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
-            break;
-
-
-        case BLE_GATTS_EVT_WRITE:
-
-
-
-            // Client write to RX characteristics?
-            if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
-            {
-               
-                // Get data and lenght
-                const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
-                const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
-
-                // Debug message
-                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
-
-                // Add to RX fifo
-                for (uint16_t idx = 0; idx < len; idx++)
-                {
-                    if ( eRING_BUFFER_OK != ring_buffer_add( g_rx_buf, (uint8_t*) &p_data[idx] ))
-                    {
-                        // Buffer overflow!
-                        BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
-                        
-                        break;
-                    }
-                }
-
-                // Raise callback
-                ble_p_evt_cb( eBLE_P_EVT_RX_DATA );
-            }
-
-        break;
-
-        default:
-            // No actions...
-            break;
-    }
-}
 
 
 
@@ -961,9 +963,6 @@ static void ble_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 * 	Following function are part of BLE Peripheral API.
 */
 ////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1008,8 +1007,10 @@ ble_p_status_t ble_p_init(void)
 	}
 
 
-    // Init BLE stuff
-    ble_stack_init();
+    // Init BLE stack
+    status |= ble_p_stack_init();
+
+
     gap_init();
     gatt_init();
     
