@@ -8,6 +8,17 @@
 *@date      10.01.2023
 *@version   V1.0.0
 *
+*
+*@description
+*
+*   This code contains simple on BLE peripheral device connection with
+*   two characteristics. Both for advertisement and connection LE UNCODED
+*   1M PHY is used.
+*
+*   After connection is established advertising is automatically stopped.
+*   After connection is lost advertising is automatically stared.
+*
+*
 *@note      This file shall be in following directory:
 *           
 *               /drivers/peripheral/ble
@@ -77,6 +88,15 @@ typedef struct
 
 } ble_p_data_t;
 
+/**
+ *      BLE Peripheral connection tag
+ *
+ * @brief   Connection config tag is a unique key for keeping track of an 
+ *          advertising configuration
+ *
+ *          Further details: https://devzone.nordicsemi.com/f/nordic-q-a/33504/what-does-app_ble_conn_cfg_tag-do 
+ */ 
+#define BLE_P_CONN_CFG_TAG                  ( 1 )
 
 /**
  *		BLE Peripheral reception buffer size
@@ -198,7 +218,12 @@ typedef struct
  *   
  *  Unit: ms
  */
-#define BLE_P_ADV_DURATION_MS                   ( 5000 )
+#define BLE_P_ADV_DURATION_MS                   ( 15000 )
+
+/**
+ *      Enable/Disable start of addvertisement on disconnection event
+ */
+#define BLE_P_START_ADV_ON_DISCONNECT           ( 1 )
 
 /**
  *      Company ID
@@ -290,10 +315,7 @@ _Static_assert(( BLE_P_ADV_INTERVAL_MS >= 20) && ( BLE_P_ADV_INTERVAL_MS <= 1024
  */
 #define BLE_EVENT_PRIORITY              3 
 
-/**
- *      BLE connection tag
- */ 
-#define BLE_CONN_CFG_TAG                ( 1 )
+
 
 
 
@@ -363,17 +385,13 @@ BLE_ADVERTISING_DEF( g_adv_instance );
 
 
 
+
+
+
 // For single connected device
 NRF_BLE_QWR_DEF( m_qwr );
 
 
-
-
-
-
-
-// TODO: Check if can be omited!
-//static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 
 #define ADV_DATA_SIZE       ( 15 )
@@ -412,12 +430,17 @@ static ble_gatts_char_handles_t    tx_char_handles    = {0};
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static ble_p_status_t   ble_p_stack_init        (void);
-static void             ble_p_evt_hndl          (ble_evt_t const * p_ble_evt, void * p_context);
-static ble_p_status_t   ble_p_gap_init          (void);
-static ble_p_status_t   ble_p_gatt_init         (void);
-static void             ble_p_adv_evt_hndl      (ble_adv_evt_t ble_adv_evt);
-static ble_p_status_t   ble_p_adv_init          (void);
+static ble_p_status_t   ble_p_stack_init            (void);
+static void             ble_p_evt_hndl              (ble_evt_t const * p_ble_evt, void * p_context);
+static inline void      ble_p_evt_on_connect        (ble_evt_t const * p_ble_evt);
+static inline void      ble_p_evt_on_disconnect     (ble_evt_t const * p_ble_evt);
+static inline void      ble_p_evt_on_write          (ble_evt_t const * p_ble_evt);
+static inline void      ble_p_evt_on_update_phy     (ble_evt_t const * p_ble_evt);
+static inline void      ble_p_evt_on_missing_attr   (ble_evt_t const * p_ble_evt);
+static ble_p_status_t   ble_p_gap_init              (void);
+static ble_p_status_t   ble_p_gatt_init             (void);
+static void             ble_p_adv_evt_hndl          (ble_adv_evt_t ble_adv_evt);
+static ble_p_status_t   ble_p_adv_init              (void);
 
 
 
@@ -446,7 +469,7 @@ static ble_p_status_t ble_p_stack_init(void)
     }
 
     // Configure BLE stack
-    if ( NRF_SUCCESS != nrf_sdh_ble_default_cfg_set( BLE_CONN_CFG_TAG, &ram_start ))
+    if ( NRF_SUCCESS != nrf_sdh_ble_default_cfg_set( BLE_P_CONN_CFG_TAG, &ram_start ))
     {
         status = eBLE_P_ERROR;
         
@@ -486,35 +509,14 @@ static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
          *      Disconnected from peer event
          */
         case BLE_GAP_EVT_DISCONNECTED:
-
-            // Connection lost
-            g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
-        
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_DISCONNECT );
-
+            ble_p_evt_on_disconnect( p_ble_evt );
             break;
 
         /**
          *      Connected to peer event
          */
         case BLE_GAP_EVT_CONNECTED:
-
-            // Assing connection info to handle
-            g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            
-            // Assign a connection handle to a given instance of the Queued Writes module
-            if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_CONNECT );
-
+            ble_p_evt_on_connect( p_ble_evt );
             break;
 
         /**
@@ -527,23 +529,7 @@ static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
          *          Further details: https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s132.api.v7.2.0%2Fgroup___b_l_e___g_a_p___p_e_r_i_p_h_e_r_a_l___p_h_y___u_p_d_a_t_e.html&cp=4_7_3_1_2_1_5_7_1
          */
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
-            
-            // Set to auto option for PHY
-            const ble_gap_phys_t phys = 
-            {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
-            };
-
-            // Update PHY
-            if ( NRF_SUCCESS != sd_ble_gap_phy_update( p_ble_evt->evt.gap_evt.conn_handle, &phys))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: PHY update error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
+            ble_p_evt_on_update_phy( p_ble_evt );
             break;
 
         /**
@@ -559,55 +545,172 @@ static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
          *          Furhter details: https://devzone.nordicsemi.com/f/nordic-q-a/54039/why-don-t-i-get-a-ble_gatts_evt_sys_attr_missing-event
          */
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-
-            // Update persistent system attribute information
-            if ( NRF_SUCCESS != sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0))
-            {
-                // TODO: How to handle this error???
-
-                BLE_P_DBG_PRINT( "BLE_P: Setting SYSTEM_ATTRIBUTES error!" );
-                BLE_P_ASSERT( 0 );
-            }
-
+            ble_p_evt_on_missing_attr( p_ble_evt );
             break;
 
         /**
          *      Write operation performed
          */
         case BLE_GATTS_EVT_WRITE:
-
-            // Client write to RX characteristics?
-            if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
-            {
-                // Get data and lenght
-                const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
-                const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
-
-                // Debug message
-                BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
-
-                // Add to RX fifo
-                for (uint16_t idx = 0; idx < len; idx++)
-                {
-                    if ( eRING_BUFFER_OK != ring_buffer_add( g_rx_buf, (uint8_t*) &p_data[idx] ))
-                    {
-                        // Buffer overflow!
-                        BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
-                        
-                        break;
-                    }
-                }
-
-                // Raise callback
-                ble_p_evt_cb( eBLE_P_EVT_RX_DATA );
-            }
-
-        break;
+            ble_p_evt_on_write( p_ble_evt );
+            break;
 
         default:
             // No actions...
             break;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE on connect event handler 
+*
+* @note     This function is being executed in main BLE stack callback!
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline void ble_p_evt_on_connect(ble_evt_t const * p_ble_evt)
+{
+    // Assing connection info to handle
+    g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+
+    // Assign a connection handle to a given instance of the Queued Writes module
+    if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
+    {
+        // TODO: How to handle this error???
+
+        BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
+        BLE_P_ASSERT( 0 );
+    }
+
+    // Stop advertisement
+    // NOTE: This is done automatically by BLE SDK library!
+    //(void) ble_p_adv_stop();
+
+    // Raise callback
+    ble_p_evt_cb( eBLE_P_EVT_CONNECT );
+
+    BLE_P_DBG_PRINT( "BLE_P: Connected!" );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE on disconnect event handler 
+*
+* @note     This function is being executed in main BLE stack callback!
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline void ble_p_evt_on_disconnect(ble_evt_t const * p_ble_evt)
+{
+    // Connection lost
+    g_ble_p.conn_handle = BLE_CONN_HANDLE_INVALID;
+
+    // Raise callback
+    ble_p_evt_cb( eBLE_P_EVT_DISCONNECT );
+
+    BLE_P_DBG_PRINT( "BLE_P: Disconnected!" );
+
+    #if ( 1 == BLE_P_START_ADV_ON_DISCONNECT )
+
+        // Start advertisement
+        (void) ble_p_adv_start();
+
+    #endif  
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE on write event handler 
+*
+* @note     This function is being executed in main BLE stack callback!
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline void ble_p_evt_on_write(ble_evt_t const * p_ble_evt)
+{
+    // Client write to RX characteristics?
+    if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
+    {
+        // Get data and lenght
+        const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
+        const uint16_t len      = p_ble_evt->evt.gatts_evt.params.write.len;
+
+        // Debug message
+        BLE_P_DBG_PRINT( "BLE_P: Rx event! (len: %d)", len );
+
+        // Add to RX fifo
+        for (uint16_t idx = 0; idx < len; idx++)
+        {
+            if ( eRING_BUFFER_OK != ring_buffer_add( g_rx_buf, (uint8_t*) &p_data[idx] ))
+            {
+                // Buffer overflow!
+                BLE_P_DBG_PRINT( "BLE_P: Rx buffer overflow! Increse buffer size via \"BLE_P_RX_BUF_SIZE\" macro!");
+
+                break;
+            }
+        }
+
+        // Raise callback
+        ble_p_evt_cb( eBLE_P_EVT_RX_DATA ); 
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE on update of PHY event handler 
+*
+* @note     This function is being executed in main BLE stack callback!
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline void ble_p_evt_on_update_phy(ble_evt_t const * p_ble_evt)
+{
+    // Set to auto option for PHY
+    const ble_gap_phys_t phys = 
+    {
+        .rx_phys = BLE_GAP_PHY_AUTO,
+        .tx_phys = BLE_GAP_PHY_AUTO,
+    };
+
+    // Update PHY
+    if ( NRF_SUCCESS != sd_ble_gap_phy_update( p_ble_evt->evt.gap_evt.conn_handle, &phys))
+    {
+        // TODO: How to handle this error???
+
+        BLE_P_DBG_PRINT( "BLE_P: PHY update error!" );
+        BLE_P_ASSERT( 0 );
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE on missing system attributes event handler 
+*
+* @note     This function is being executed in main BLE stack callback!
+*
+* @param[in] 	p_ble_evt   - Pointer to BLE event informations
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static inline void ble_p_evt_on_missing_attr(ble_evt_t const * p_ble_evt)
+{
+    // Update persistent system attribute information
+    if ( NRF_SUCCESS != sd_ble_gatts_sys_attr_set( g_ble_p.conn_handle, NULL, 0, 0))
+    {
+        // TODO: How to handle this error???
+
+        BLE_P_DBG_PRINT( "BLE_P: Setting SYSTEM_ATTRIBUTES error!" );
+        BLE_P_ASSERT( 0 );
+    }    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -724,7 +827,7 @@ static ble_p_status_t ble_p_adv_init(void)
     }
     
     // Setup advertising config tag
-    ble_advertising_conn_cfg_tag_set( &g_adv_instance, BLE_CONN_CFG_TAG );
+    ble_advertising_conn_cfg_tag_set( &g_adv_instance, BLE_P_CONN_CFG_TAG );
 
     return status;
 }

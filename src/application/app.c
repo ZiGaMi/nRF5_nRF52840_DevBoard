@@ -241,7 +241,9 @@ void ble_p_evt_cb(const ble_p_evt_t event)
 
         /**<Peer dis-connected event */
         case eBLE_P_EVT_DISCONNECT:
-            led_set_smooth( eLED_2, eLED_OFF );
+
+            // Using automatic advertisement after disconnect
+            //led_set( eLED_2, eLED_OFF );
             break;
         
         /**<Client writes to Rx characteristics */
