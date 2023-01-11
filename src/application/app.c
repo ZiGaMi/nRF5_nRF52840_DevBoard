@@ -251,7 +251,7 @@ void ble_p_evt_cb(const ble_p_evt_t event)
 
         /**<Advertising started event */
         case eBLE_P_EVT_ADV_START:
-            led_blink_smooth( eLED_2, 0.5f, 1.0f, eLED_BLINK_CONTINUOUS );
+            led_blink_smooth( eLED_2, 0.1f, 1.0f, eLED_BLINK_CONTINUOUS );
             break;
 
         /**<Advertising ended event */
