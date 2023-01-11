@@ -349,6 +349,9 @@ static void app_btn_2_pressed(void)
 
 	// Further actions here...
 
+    // TODO: Remove only testing...
+    ble_p_adv_start();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -384,6 +387,9 @@ static void app_btn_3_pressed(void)
 	par_set( ePAR_BTN_3, (uint8_t*) &(uint8_t){1} );
 
 	// Further actions here...
+
+    // TODO: Remove only testing...
+    ble_p_adv_stop();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

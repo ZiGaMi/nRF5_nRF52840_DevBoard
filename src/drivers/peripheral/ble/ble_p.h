@@ -61,9 +61,9 @@ typedef enum
 ble_p_status_t ble_p_init           (void);
 ble_p_status_t ble_p_is_init        (bool * const p_is_init);
 
-ble_p_status_t ble_p_set_adv_start      (void);
-ble_p_status_t ble_p_set_adv_stop       (void);
-ble_p_status_t ble_p_is_adv             (bool * const p_is_adv);
+ble_p_status_t ble_p_adv_start      (void);
+ble_p_status_t ble_p_adv_stop       (void);
+ble_p_status_t ble_p_is_adv         (bool * const p_is_adv);
 
 ble_p_status_t ble_p_is_connected   (bool * const p_is_conn);
 ble_p_status_t ble_p_write          (const uint8_t * const p_data, const uint16_t len);

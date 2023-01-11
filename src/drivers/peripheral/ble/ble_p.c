@@ -72,8 +72,8 @@
  */
 typedef struct
 {
-    uint16_t conn_handle;       /**< Connection Handle on which event occurred */
-
+    uint16_t    conn_handle;        /**<Connection Handle on which event occurred */
+    bool        is_adv;             /**<Advertisment active flag */ 
 
 } ble_p_data_t;
 
@@ -210,7 +210,7 @@ typedef struct
  *          
  *          Further details: https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Assigned%20Numbers.pdf
  *
- * @note    Company ID = 0x0059 for Nordic Semiconductor
+ * @note    Company ID = 0x0059 for Nordic Semiconductor ASA
  */
 #define BLE_P_ADV_MAN_DATA_COMPANY_ID           ( 0x0059 )
 
@@ -299,32 +299,6 @@ _Static_assert(( BLE_P_ADV_INTERVAL_MS >= 20) && ( BLE_P_ADV_INTERVAL_MS <= 1024
 
 
 
-/******************************************************************
- *      ADVERTISEMENT
- ******************************************************************/
-
- /**
-  *     Advertisement inteval
-  * 
-  * @note   In units of 0.625 ms. E.g. value of 300 corresponds to 187.5 ms.
-  *
-  * @note   Place time in ms as it will be re-calculated later into proper values!
-  *
-  *     Unit: ms
-  */
-#define GAP_ADV_INTERVAL_MS                 ( 200.0 )
-
-/**
- *      Advertisement duration
- *
- * @note    In units of 10 milliseconds. Anyway place time in ms as it 
- *          will be re-calculated later into proper values!
- *
- * @note    Set to 0 if wanted continous advertisement!  
- *   
- *  Unit: ms
- */
-#define GAP_ADV_DURATION_MS                 ( 0 )
 
 
 /******************************************************************
@@ -359,7 +333,7 @@ static uint8_t gu8_ble_rx_buffer[BLE_P_RX_BUF_SIZE] = {0};
 static p_ring_buffer_t 		g_rx_buf = NULL;
 const ring_buffer_attr_t 	g_rx_buf_attr = 
 { 	
-    .name 		= "BLE P Rx Buf",
+    .name 		= "BLE Peripheral Rx Buf",
     .item_size 	= sizeof(uint8_t),
     .override 	= false,
     .p_mem 		= &gu8_ble_rx_buffer 
@@ -370,17 +344,20 @@ const ring_buffer_attr_t 	g_rx_buf_attr =
  */
 static ble_p_data_t g_ble_p = 
 { 
-    .conn_handle = BLE_CONN_HANDLE_INVALID,
+    .conn_handle    = BLE_CONN_HANDLE_INVALID,
+    .is_adv         = false,
 
-};
+};  
     
 /**
  *  GATT instance
  */
-NRF_BLE_GATT_DEF( m_gatt );
+NRF_BLE_GATT_DEF( g_gatt_instance );
 
-
-
+/**
+ *  Advertising instance
+ */ 
+BLE_ADVERTISING_DEF( g_adv_instance );
 
 
 
@@ -392,8 +369,7 @@ NRF_BLE_QWR_DEF( m_qwr );
 
 
 
-// Advertising instance
-BLE_ADVERTISING_DEF( m_advertising );
+
 
 
 // TODO: Check if can be omited!
@@ -695,7 +671,7 @@ static ble_p_status_t ble_p_gatt_init(void)
     ble_p_status_t status = eBLE_P_OK;
 
     // Initialize GATT
-    if ( NRF_SUCCESS != nrf_ble_gatt_init( &m_gatt, NULL ))
+    if ( NRF_SUCCESS != nrf_ble_gatt_init( &g_gatt_instance, NULL ))
     { 
         status = eBLE_P_ERROR;
 
@@ -741,14 +717,14 @@ static ble_p_status_t ble_p_adv_init(void)
     man_data.data.size          = strlen( man_data.data.p_data );
 
     // Init advertisement
-    if ( NRF_SUCCESS != ble_advertising_init( &m_advertising, &adv_init ))
+    if ( NRF_SUCCESS != ble_advertising_init( &g_adv_instance, &adv_init ))
     {
         // TODO: Change error status...
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
     
     // Setup advertising config tag
-    ble_advertising_conn_cfg_tag_set( &m_advertising, BLE_CONN_CFG_TAG );
+    ble_advertising_conn_cfg_tag_set( &g_adv_instance, BLE_CONN_CFG_TAG );
 
     return status;
 }
@@ -771,8 +747,13 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
          */
         case BLE_ADV_EVT_FAST:
 
+            // Set adv flag
+            g_ble_p.is_adv = true;
+
             // Raise callback
             ble_p_evt_cb( eBLE_P_EVT_ADV_START );
+
+            BLE_P_DBG_PRINT( "BLE_P: Advertisement started!" );
 
             break;
         
@@ -781,8 +762,13 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
          */
         case BLE_ADV_EVT_IDLE:
 
+            // Clear adv flag
+            g_ble_p.is_adv = false;
+
             // Raise callback
             ble_p_evt_cb( eBLE_P_EVT_ADV_END );
+
+            BLE_P_DBG_PRINT( "BLE_P: Advertisement stoped!" );
 
             break;
 
@@ -793,16 +779,6 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
 }
 
 
-
-
-static void advertisement_start(void)
-{
-    if ( NRF_SUCCESS != ble_advertising_start( &m_advertising, BLE_ADV_MODE_FAST ))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
-    }
-}
 
 
 
@@ -1100,9 +1076,6 @@ ble_p_status_t ble_p_init(void)
 
 
 
-
-    //advertisement_init();
-    //advertisement_2_init();
     
     services_init();
     conn_pars_init(); 
@@ -1112,8 +1085,7 @@ ble_p_status_t ble_p_init(void)
 
 
     // Start advertising     
-    advertisement_start();
-
+    status = ble_p_adv_start();
 
     // Init success
     if ( eBLE_P_OK == status )
@@ -1177,6 +1149,106 @@ ble_p_status_t ble_p_is_connected(bool * const p_is_conn)
     {
         status = eBLE_P_ERROR;
     }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral start advertising
+*
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_adv_start(void)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    BLE_P_ASSERT( true == gb_is_init );
+
+    if (    ( true == gb_is_init )
+        &&  ( false == g_ble_p.is_adv ))
+    {
+        // Start advertisement
+        if ( NRF_SUCCESS != ble_advertising_start( &g_adv_instance, BLE_ADV_MODE_FAST ))
+        {
+            status = eBLE_P_ERROR;
+    
+            BLE_P_DBG_PRINT( "BLE_P: Advertisement start error!" ); 
+        }
+    }
+    else
+    {
+        status = eBLE_P_ERROR;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral stop advertising
+*
+* @note     It is recommended to setup advertise duration rather that
+*           calling that function as BLE Advertisement library don't 
+*           really support advertisement stop.
+*
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_adv_stop(void)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    BLE_P_ASSERT( true == gb_is_init );
+
+    if (    ( true == gb_is_init )
+        &&  ( true == g_ble_p.is_adv ))
+    {
+        // Stop advertisement library
+        if ( NRF_SUCCESS != ble_advertising_start( &g_adv_instance, BLE_ADV_MODE_IDLE ))
+        {
+            status = eBLE_P_ERROR;
+        
+            BLE_P_DBG_PRINT( "BLE_P: BLE adv stop error!" ); 
+        }
+
+        // Stop advertisement diretly via SoftDevice
+        if ( NRF_SUCCESS != sd_ble_gap_adv_stop( g_adv_instance.adv_handle ))
+        {
+            status = eBLE_P_ERROR;
+        
+            BLE_P_DBG_PRINT( "BLE_P: SD adv stop error!" ); 
+        }
+    }
+    else
+    {
+        status = eBLE_P_ERROR;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Is BLE Peripheral advertising
+*
+* @param[out]   p_is_adv    - Pointer to advertisement status
+* @return 		status		- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+ble_p_status_t ble_p_is_adv(bool * const p_is_adv)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    if ( NULL != p_is_adv )
+    {
+        *p_is_adv = g_ble_p.is_adv;
+    }
+    else
+    {
+        status = eBLE_P_ERROR;
+   }
 
     return status;
 }
