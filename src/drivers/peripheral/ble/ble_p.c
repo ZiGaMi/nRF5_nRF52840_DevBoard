@@ -98,6 +98,12 @@ typedef struct
  */ 
 #define BLE_P_CONN_CFG_TAG                  ( 1 )
 
+
+/**
+ *      Main BLE Peripheral event priority
+ */
+#define BLE_P_EVENT_PRIORITY                3
+
 /**
  *		BLE Peripheral reception buffer size
  *
@@ -310,10 +316,6 @@ _Static_assert(( BLE_P_ADV_INTERVAL_MS >= 20) && ( BLE_P_ADV_INTERVAL_MS <= 1024
 
 
 
-/**
- *      BLE Event priority
- */
-#define BLE_EVENT_PRIORITY              3 
 
 
 
@@ -394,8 +396,6 @@ NRF_BLE_QWR_DEF( m_qwr );
 
 
 
-#define ADV_DATA_SIZE       ( 15 )
-static uint8_t my_adv_data[ADV_DATA_SIZE] = { 0 };
 
 
 // Available services as it will be part of advertisement packet
@@ -486,7 +486,7 @@ static ble_p_status_t ble_p_stack_init(void)
     
     // Register BLE event callback
     // An observer is essentially a piece of code that listens for events.
-    NRF_SDH_BLE_OBSERVER( m_ble_observer, BLE_EVENT_PRIORITY, ble_p_evt_hndl, NULL );
+    NRF_SDH_BLE_OBSERVER( m_ble_observer, BLE_P_EVENT_PRIORITY, ble_p_evt_hndl, NULL );
 
     return status;
 }
@@ -884,12 +884,13 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
 
 
 
-
+/*
 static void nrf_qwr_error_hndl(uint32_t nrf_error)
 {
     // Handler errors here...
 
 }
+*/
 
 // Init services
 static ret_code_t services_init(void)
@@ -898,7 +899,7 @@ static ret_code_t services_init(void)
     nrf_ble_qwr_init_t  qwr_init    = { 0 };
 
     // Register error hander
-    qwr_init.error_handler = nrf_qwr_error_hndl;
+    //qwr_init.error_handler = nrf_qwr_error_hndl;
 
     // Init QWR
     if ( NRF_SUCCESS != nrf_ble_qwr_init( &m_qwr, &qwr_init ))
@@ -1266,12 +1267,17 @@ ble_p_status_t ble_p_is_connected(bool * const p_is_conn)
 ////////////////////////////////////////////////////////////////////////////////
 ble_p_status_t ble_p_adv_start(void)
 {
-    ble_p_status_t status = eBLE_P_OK;
+    ble_p_status_t  status          = eBLE_P_OK;
+    bool            is_connected    = false;
 
     BLE_P_ASSERT( true == gb_is_init );
 
+    // Get connection flag
+    ble_p_is_connected( &is_connected );
+
     if (    ( true == gb_is_init )
-        &&  ( false == g_ble_p.is_adv ))
+        &&  ( false == g_ble_p.is_adv )
+        &&  ( false == is_connected ))
     {
         // Start advertisement
         if ( NRF_SUCCESS != ble_advertising_start( &g_adv_instance, BLE_ADV_MODE_FAST ))
@@ -1302,12 +1308,17 @@ ble_p_status_t ble_p_adv_start(void)
 ////////////////////////////////////////////////////////////////////////////////
 ble_p_status_t ble_p_adv_stop(void)
 {
-    ble_p_status_t status = eBLE_P_OK;
+    ble_p_status_t  status          = eBLE_P_OK;
+    bool            is_connected    = false;
 
     BLE_P_ASSERT( true == gb_is_init );
 
+    // Get connection flag
+    ble_p_is_connected( &is_connected );
+
     if (    ( true == gb_is_init )
-        &&  ( true == g_ble_p.is_adv ))
+        &&  ( true == g_ble_p.is_adv )
+        &&  ( false == is_connected ))
     {
         // Stop advertisement library
         if ( NRF_SUCCESS != ble_advertising_start( &g_adv_instance, BLE_ADV_MODE_IDLE ))
@@ -1375,7 +1386,7 @@ ble_p_status_t ble_p_is_adv(bool * const p_is_adv)
 ////////////////////////////////////////////////////////////////////////////////
 ble_p_status_t ble_p_write(const uint8_t * const p_data, const uint16_t len)
 {
-    ble_p_status_t status = eBLE_P_OK;
+    ble_p_status_t  status          = eBLE_P_OK;
     bool            is_connected    = false;
 
     BLE_P_ASSERT( true == gb_is_init );
