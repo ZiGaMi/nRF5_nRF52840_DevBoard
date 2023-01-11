@@ -104,7 +104,7 @@ void app_init(void)
     // Init LEDs
     if ( eLED_OK != led_init())
     {
-    cli_printf_ch( eCLI_CH_APP, "LED init error!" );
+        cli_printf_ch( eCLI_CH_APP, "LED init error!" );
         PROJECT_CONFIG_ASSERT( 0 );
     }
     else

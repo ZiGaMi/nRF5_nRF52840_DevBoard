@@ -78,11 +78,12 @@ typedef enum
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-gpio_status_t 	gpio_init	(void);
+gpio_status_t 	gpio_init       (void);
+gpio_status_t   gpio_deinit     (void);
 gpio_status_t	gpio_is_init	(bool * const p_is_init);
-gpio_state_t	gpio_get	(const gpio_pins_t pin);
-void		gpio_set	(const gpio_pins_t pin, const gpio_state_t state);
-void		gpio_toggle	(const gpio_pins_t pin);
+gpio_state_t	gpio_get        (const gpio_pins_t pin);
+void            gpio_set        (const gpio_pins_t pin, const gpio_state_t state);
+void            gpio_toggle     (const gpio_pins_t pin);
 
 
 #endif // __GPIO_H

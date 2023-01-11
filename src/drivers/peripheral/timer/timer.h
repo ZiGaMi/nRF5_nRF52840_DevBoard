@@ -61,6 +61,7 @@ typedef float float32_t;
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 timer_status_t 	timer_init			(void);
+timer_status_t  timer_deinit        (void);
 timer_status_t 	timer_is_init		(bool * const p_is_init);
 timer_status_t 	timer_set_pwm		(const timer_ch_t ch, const float32_t duty);
 

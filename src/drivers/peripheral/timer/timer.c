@@ -219,6 +219,29 @@ timer_status_t timer_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*		Timer de-initialization
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+timer_status_t timer_deinit(void)
+{
+    timer_status_t status = eTIMER_OK;
+
+    if ( true == gb_is_init )
+    {
+        // De-init timer
+        nrf_drv_pwm_uninit( &gh_timer_pwm_0 );
+
+        // Clear init flag
+        gb_is_init = false;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Get init status
 *
 * @param[out]   p_is_init   - Initialization flag

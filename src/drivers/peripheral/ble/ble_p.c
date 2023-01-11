@@ -198,7 +198,7 @@ typedef struct
  *   
  *  Unit: ms
  */
-#define BLE_P_ADV_DURATION_MS                   ( 0 )
+#define BLE_P_ADV_DURATION_MS                   ( 5000 )
 
 /**
  *      Company ID
@@ -1084,13 +1084,14 @@ ble_p_status_t ble_p_init(void)
     custom_service_init();
 
 
-    // Start advertising     
-    status = ble_p_adv_start();
 
     // Init success
     if ( eBLE_P_OK == status )
     {
         gb_is_init = true;
+
+        // Start advertising     
+        status = ble_p_adv_start();
     }
 
 

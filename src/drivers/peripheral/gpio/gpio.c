@@ -144,6 +144,40 @@ gpio_status_t gpio_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*       GPIO de-initialization
+*
+* @return 	status 	- Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+gpio_status_t gpio_deinit(void)
+{
+    gpio_status_t status = eGPIO_OK;
+
+    if ( true == gb_is_init )
+    {
+        // Init all GPIOs
+        for ( uint32_t pin = 0; pin < eGPIO_NUM_OF; pin++ )
+        {
+            // Configure as input
+            nrf_gpio_cfg_input( NRF_GPIO_PIN_MAP(  g_gpio_cfg_table[pin].port, g_gpio_cfg_table[pin].pin ), g_gpio_cfg_table[pin].pull );
+        }
+
+        // Alles gut - init succeed
+        if ( eGPIO_OK == status )
+        {
+            gb_is_init = false;
+        }
+    }
+    else
+    {
+        status = eGPIO_ERROR;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *	Get GPIO init flag
 *
 * @param[out] 	p_is_init	- Pointer to GPIO init flag
