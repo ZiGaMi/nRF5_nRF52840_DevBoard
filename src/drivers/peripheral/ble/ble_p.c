@@ -88,7 +88,7 @@ typedef struct
 /**
  *      Device name
  */
-#define BLE_P_DEVICE_NAME                   ( "BLE Base Code" )
+#define BLE_P_DEVICE_NAME                   ( "MyBLE" )
 
 /**
  *      Device BLE appearance
@@ -169,7 +169,50 @@ typedef struct
  */
 #define BLE_P_SUPERVISION_TIMEOUT_MS        ( 4000 )
 
+ /**
+  *     Advertisement inteval
+  * 
+  * @brief  Advertisement interval dictates time between two consequtive
+  *         advertisement packets.
+  *
+  *         Valid value range: 20 ms - 10.24 sec
+  *         Resolution: 0.625 ms
+  *
+  * @note   The advertising interval greatly impacts battery life. It is 
+  *         recommended to choose the longest advertising interval that provides
+  *         a balance between fast connectivity and reduced power consumption!
+  *
+  *     Unit: ms
+  */
+#define BLE_P_ADV_INTERVAL_MS                 ( 200.0 )
 
+/**
+ *      Advertisement duration
+ *
+ * @brief   Advertisement duration defines how long BLE peripheral
+ *          device will advertise. After that time advertismeent
+ *          will stop and Central BLE device won't be able to 
+ *          scan it.
+ *
+ * @note    Value = 0 --> Continous advertisement!  
+ *   
+ *  Unit: ms
+ */
+#define BLE_P_ADV_DURATION_MS                   ( 0 )
+
+/**
+ *      Company ID
+ *
+ * @brief   Company ID is part of Manufacturer Specific Data 
+ *          in advertisement packet.
+ *          
+ *          Company ID values is defined by SIG BLE.
+ *          
+ *          Further details: https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Assigned%20Numbers.pdf
+ *
+ * @note    Company ID = 0x0059 for Nordic Semiconductor
+ */
+#define BLE_P_ADV_MAN_DATA_COMPANY_ID           ( 0x0059 )
 
 
 /**
@@ -231,7 +274,8 @@ _Static_assert(( BLE_P_SUPERVISION_TIMEOUT_MS >= 100) && ( BLE_P_SUPERVISION_TIM
 // Supervision timeout additional condition must be meet
 _Static_assert( BLE_P_SUPERVISION_TIMEOUT_MS > (( 1 + BLE_P_SLAVE_LATENCY ) * 2 * BLE_P_MAX_CONN_INTERVAL_MS ));
 
-
+// Advertisement interval must be in valid range
+_Static_assert(( BLE_P_ADV_INTERVAL_MS >= 20) && ( BLE_P_ADV_INTERVAL_MS <= 10240 ));
 
 
 
@@ -252,43 +296,6 @@ _Static_assert( BLE_P_SUPERVISION_TIMEOUT_MS > (( 1 + BLE_P_SLAVE_LATENCY ) * 2 
 #define BLE_CONN_CFG_TAG                ( 1 )
 
 
-/******************************************************************
- *      GAP RELATED
- ******************************************************************/
-
-/**
- *      Device name
- */
-#define GAP_DEVICE_NAME                     ( "My BLE Device" )
-
-/**
- *      Minimum connection interval
- *
- *  Unit: ms
- */
-#define GAP_MIN_CONN_INTERVAL_MS            ( 100 ) 
-
-/**
- *      Maximum connection interval
- *
- *  Unit: ms
- */
-#define GAP_MAX_CONN_INTERVAL_MS            ( 200 ) 
-
-/**
- *      Slave latency
- */
-#define GAP_SLAVE_LATENCY                   ( 0 )
-
-/**
- *      Suppervsision timeout
- *
- * @note    If device is not responding within that time the connection
- *          will be terminated!
- *
- *  Unit: ms
- */
-#define GAP_SUPERVISION_TIMEOUT_MS          ( 4000 )
 
 
 
@@ -367,6 +374,14 @@ static ble_p_data_t g_ble_p =
 
 };
     
+/**
+ *  GATT instance
+ */
+NRF_BLE_GATT_DEF( m_gatt );
+
+
+
+
 
 
 
@@ -374,11 +389,8 @@ static ble_p_data_t g_ble_p =
 // For single connected device
 NRF_BLE_QWR_DEF( m_qwr );
 
-// For multi connected devices
-//NRF_BLE_QWRS_DEF()
 
-// GATT instance
-NRF_BLE_GATT_DEF( m_gatt );
+
 
 // Advertising instance
 BLE_ADVERTISING_DEF( m_advertising );
@@ -424,9 +436,12 @@ static ble_gatts_char_handles_t    tx_char_handles    = {0};
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static ble_p_status_t   ble_p_stack_init    (void);
-static void             ble_p_evt_hndl      (ble_evt_t const * p_ble_evt, void * p_context);
-static ble_p_status_t   ble_p_gap_init      (void);
+static ble_p_status_t   ble_p_stack_init        (void);
+static void             ble_p_evt_hndl          (ble_evt_t const * p_ble_evt, void * p_context);
+static ble_p_status_t   ble_p_gap_init          (void);
+static ble_p_status_t   ble_p_gatt_init         (void);
+static void             ble_p_adv_evt_hndl      (ble_adv_evt_t ble_adv_evt);
+static ble_p_status_t   ble_p_adv_init          (void);
 
 
 
@@ -668,148 +683,62 @@ static ble_p_status_t ble_p_gap_init(void)
     return status;
 }
 
-
-
-
-// Init GATT
-static ret_code_t gatt_init(void)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize BLE Peripheral GATT
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t ble_p_gatt_init(void)
 {
-    ret_code_t status = NRF_SUCCESS;
+    ble_p_status_t status = eBLE_P_OK;
 
+    // Initialize GATT
     if ( NRF_SUCCESS != nrf_ble_gatt_init( &m_gatt, NULL ))
     { 
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );  
+        status = eBLE_P_ERROR;
+
+        BLE_P_DBG_PRINT( "BLE_P: GATT init error!" );  
     }
 
     return status;
 }
 
-
-
-// Advertisement handler
-static void adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize BLE Peripheral advertisement
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t ble_p_adv_init(void)
 {
-
-    switch (ble_adv_evt)
-    {
-        // Advertisement START
-        case BLE_ADV_EVT_FAST:
-
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_ADV_START );
-
-            break;
-        
-        // Advertisement STOP
-        case BLE_ADV_EVT_IDLE:
-
-            // Raise callback
-            ble_p_evt_cb( eBLE_P_EVT_ADV_END );
-
-            break;
-
-        default:
-            break;
-    }
-}
-
-// Init advertisment
-static ret_code_t advertisement_init(void)
-{
-    ret_code_t              status   = NRF_SUCCESS;
-    ble_advertising_init_t  adv_init = {0};
+    ble_p_status_t              status   = eBLE_P_OK;
+    ble_advertising_init_t      adv_init = {0};
+    ble_advdata_manuf_data_t    man_data = {0};
 
     // Set up advertising parameters
     adv_init.advdata.name_type              = BLE_ADVDATA_FULL_NAME;
     adv_init.advdata.include_appearance     = true;
     adv_init.advdata.flags                  = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
     adv_init.config.ble_adv_fast_enabled    = true;
-    adv_init.config.ble_adv_fast_interval   = (uint32_t) ( GAP_ADV_INTERVAL_MS / 0.625f );
-    adv_init.config.ble_adv_fast_timeout    = (uint32_t) ( GAP_ADV_DURATION_MS / 10.0f );
-    adv_init.evt_handler                    = adv_evt_hndl;
-
-
+    adv_init.config.ble_adv_fast_interval   = (uint32_t) ( BLE_P_ADV_INTERVAL_MS / 0.625f );
+    adv_init.config.ble_adv_fast_timeout    = (uint32_t) ( BLE_P_ADV_DURATION_MS / 10.0f );
+    adv_init.evt_handler                    = ble_p_adv_evt_hndl;
+    adv_init.advdata.p_manuf_specific_data  = &man_data;
     
-    /****************************************************************
-     *  SHOWING TX POWER LEVEL
-     */
-    
-    int8_t tx_level = 1;
-    adv_init.advdata.p_tx_power_level = &tx_level;
-
-    /****************************************************************
-     *  SHOWING AVAILABLE SERVICES IN ADVERTISEMENT PACKETS
-     */
-    
-    // Show also available services in advertisement packet
-    adv_init.advdata.uuids_complete.p_uuids = (ble_uuid_t*) &m_adv_uuids;
-    adv_init.advdata.uuids_complete.uuid_cnt = 2;
-
-
-
-    /****************************************************************
-    *  ADDING SERVICE DATA TO ADVERTISEMENT PACKET
-    */
+    // TODO: Find out how to add here custom service UUID
     #if 0
-    uint8_t                        bat_level       = 12;
-    ble_advdata_service_data_t     service_data    = {0};
-
-    // Set up service data
-    service_data.service_uuid      = BLE_UUID_BATTERY_SERVICE;
-    service_data.data.size         = sizeof( bat_level);
-    service_data.data.p_data       = (uint8_t*) &bat_level;
-
-    // Add to advertisement data
-    adv_init.advdata.p_service_data_array   = &service_data;
-    adv_init.advdata.service_data_count     = 1;
-
-
+        // Show also available services in advertisement packet
+        adv_init.advdata.uuids_complete.p_uuids = (ble_uuid_t*) &m_adv_uuids;
+        adv_init.advdata.uuids_complete.uuid_cnt = 2;
     #endif
 
-
-    /****************************************************************
-     *  SETTING UP MANUFACTURER DATA INSIDE ADVERTISEMENT PACKET
-     */
-    
-    #if 0
-        ble_advdata_manuf_data_t man_data =
-        {
-            .company_identifier = 0x00ff,
-            .data = 
-            {
-                .p_data = (uint8_t*) &my_adv_data,
-                .size = ADV_DATA_SIZE,
-            }
-        };
-
-        adv_init.advdata.p_manuf_specific_data = &man_data;
-    #endif
-
-        
-        
-        // Set Long Range Advertisement PHY
-        //adv_init.config.ble_adv_primary_phy     = BLE_GAP_PHY_CODED;
-        //adv_init.config.ble_adv_secondary_phy   = BLE_GAP_PHY_CODED;
-        
-
-
-    /****************************************************************
-     *  SETTING UP CONNECTION INTERVAL RANGE
-     */
-    
-    ble_advdata_conn_int_t slave_conn_int = 
-    {
-        .min_conn_interval = (uint16_t)( 100 / 1.25 ),        /**< Minimum connection interval, in units of 1.25 ms, range 6 to 3200 (7.5 ms to 4 s). */
-        .max_conn_interval = (uint16_t)( 200 / 1.25 ),         /**< Maximum connection interval, in units of 1.25 ms, range 6 to 3200 (7.5 ms to 4 s). The value 0xFFFF indicates no specific maximum. */
-    };
-
-    adv_init.advdata.p_slave_conn_int = &slave_conn_int;
-
-
-
-
-
+    // Set up manufacturer data
+    man_data.company_identifier = BLE_P_ADV_MAN_DATA_COMPANY_ID;
+    man_data.data.p_data        = "Vendor Data";
+    man_data.data.size          = strlen( man_data.data.p_data );
 
     // Init advertisement
     if ( NRF_SUCCESS != ble_advertising_init( &m_advertising, &adv_init ))
@@ -823,6 +752,46 @@ static ret_code_t advertisement_init(void)
 
     return status;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		BLE Peripheral Advertisement event handler
+*
+* @param[in]    ble_adv_evt     - Advertisement event
+* @return 		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
+{
+    // Based on advertisemnt event
+    switch (ble_adv_evt)
+    {
+        /**
+         *      Fast advertising mode has started
+         */
+        case BLE_ADV_EVT_FAST:
+
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_ADV_START );
+
+            break;
+        
+        /**
+         *      Idle; no connectable advertising is ongoing
+         */
+        case BLE_ADV_EVT_IDLE:
+
+            // Raise callback
+            ble_p_evt_cb( eBLE_P_EVT_ADV_END );
+
+            break;
+
+        default:
+            // No actions...
+            break;
+    }
+}
+
 
 
 
@@ -1116,17 +1085,23 @@ ble_p_status_t ble_p_init(void)
 		status = eBLE_P_ERROR;
 	}
 
-
     // Init BLE stack
     status |= ble_p_stack_init();
 
     // Init GAP (connection parameters)
     status |= ble_p_gap_init();
     
+    // Init GATT
+    status |= ble_p_gatt_init();
     
-    gatt_init();
-    
-    advertisement_init();
+    // Init advertisement
+    status |= ble_p_adv_init();
+
+
+
+
+
+    //advertisement_init();
     //advertisement_2_init();
     
     services_init();
