@@ -24,6 +24,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "project_config.h"
 
 #include "ble_p.h"
@@ -85,6 +86,93 @@ typedef struct
 #define BLE_P_RX_BUF_SIZE                   ( 512 )  
 
 /**
+ *      Device name
+ */
+#define BLE_P_DEVICE_NAME                   ( "BLE Base Code" )
+
+/**
+ *      Device BLE appearance
+ *
+ * @note    Shall have standard value!
+ *
+ *          Look at "ble_types.h" file for pre-defined values.
+ */
+#define BLE_P_DEVICE_APPEARANCE             ( BLE_APPEARANCE_GENERIC_COMPUTER )
+
+/**
+ *      Minimum connection interval
+ *
+ * @brief   This is part of Peripheral Prefered Connection Parameter (PPCP)
+ *          values. It only suggest Central BLE device about connection
+ *          timing. At the end Central BLE device is deciding if 
+ *          respect these values or ignore them.
+ *
+ *          Valid value range: 7.5 ms - 4.0 sec
+ *          Resolution:  1.25 ms
+ *
+ * @note    Min. connection interval shall not be larger than max.!
+ *
+ *  Unit: ms
+ */
+#define BLE_P_MIN_CONN_INTERVAL_MS          ( 100 ) 
+
+/**
+ *      Maximum connection interval
+ *
+ * @brief   This is part of Peripheral Prefered Connection Parameter (PPCP)
+ *          values. It only suggest Central BLE device about connection
+ *          timing. At the end Central BLE device is deciding if 
+ *          respect these values or ignore them.
+ *
+ *          Valid value range: 7.5 ms - 4.0 sec
+ *          Resolution:  1.25 ms
+ *
+ * @note    Min. connection interval shall not be larger than max.!
+ *
+ *  Unit: ms
+ */
+#define BLE_P_MAX_CONN_INTERVAL_MS          ( 200 ) 
+
+/**
+ *      Slave latency
+ *
+ * @brief   This is part of Peripheral Prefered Connection Parameter (PPCP)
+ *          values. Slave latency parameter allows the peripheral to skip a number
+ *          of consecutive connection Events without compromising the
+ *          connection.
+ *
+ *          The slave latency value defines the number of connection
+ *          events it can safely skip.
+ *
+ *          Valid value range: 0 - ((connSupervisionTimeout / connIntervalMax) - 1)
+ *
+ * @note    Value of 0 means that Peripheral BLE device needs to address
+ *          every connection event triggered by Central BLE device.
+ */
+#define BLE_P_SLAVE_LATENCY                 ( 0 )
+
+/**
+ *      Supervsision timeout
+ *
+ * @brief   This is part of Peripheral Prefered Connection Parameter (PPCP)
+ *          values. The Supervision Timeout is used to detect a loss in 
+ *          communication. It is defined as maximum time between two received 
+ *          data packets before the connection is considered lost.
+ *
+ *          Valid value range: 100 ms - 32 sec
+ *
+ * @note    Additional condition to check:
+ *
+ *              SupervisionTimeout > (( 1 + SlaveLatency ) * connInterval * 2 )
+ *
+ *  Unit: ms
+ */
+#define BLE_P_SUPERVISION_TIMEOUT_MS        ( 4000 )
+
+
+
+
+/**
  * 	Enable/Disable debug mode
  *
  * 	@note	Disable in release!
@@ -127,13 +215,21 @@ typedef struct
   #define BLE_P_ASSERT)                     { ; }
  #endif
 
+/**
+ *  Invalid configuration catcher
+ */
 
+ // Min. connection interval must be smaller than max.
+ _Static_assert( BLE_P_MIN_CONN_INTERVAL_MS < BLE_P_MAX_CONN_INTERVAL_MS );
 
+// Slave lateny must be in valid range
+_Static_assert(( BLE_P_SLAVE_LATENCY >= 0) && ( BLE_P_SLAVE_LATENCY < 500 ));
 
+// Supervision timeout must be in valid range
+_Static_assert(( BLE_P_SUPERVISION_TIMEOUT_MS >= 100) && ( BLE_P_SUPERVISION_TIMEOUT_MS <= 32000 ));
 
-
-
-
+// Supervision timeout additional condition must be meet
+_Static_assert( BLE_P_SUPERVISION_TIMEOUT_MS > (( 1 + BLE_P_SLAVE_LATENCY ) * 2 * BLE_P_MAX_CONN_INTERVAL_MS ));
 
 
 
@@ -330,6 +426,7 @@ static ble_gatts_char_handles_t    tx_char_handles    = {0};
 ////////////////////////////////////////////////////////////////////////////////
 static ble_p_status_t   ble_p_stack_init    (void);
 static void             ble_p_evt_hndl      (ble_evt_t const * p_ble_evt, void * p_context);
+static ble_p_status_t   ble_p_gap_init      (void);
 
 
 
@@ -460,6 +557,15 @@ static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
 
         /**
          *      A persistent system attribute access is pending
+         *
+         * @note    This event is triggered if the peer request a read on any of the
+         *          system attributes
+         *
+         *          In the case where you send indications or notifications before the peer requests 
+         *          such a read, for instance you want to perform a "sd_ble_gatts_service_changed()", 
+         *          you need to do "the sd_ble_gatts_sys_attr_set()" first.
+         *
+         *          Furhter details: https://devzone.nordicsemi.com/f/nordic-q-a/54039/why-don-t-i-get-a-ble_gatts_evt_sys_attr_missing-event
          */
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
 
@@ -513,13 +619,16 @@ static void ble_p_evt_hndl(ble_evt_t const * p_ble_evt, void * p_context)
     }
 }
 
-
-
-
-// Init GAP
-static ret_code_t gap_init(void)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize BLE Peripheral GAP
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t ble_p_gap_init(void)
 {
-    ret_code_t                  status          = NRF_SUCCESS;
+    ble_p_status_t              status          = eBLE_P_OK;
     ble_gap_conn_params_t       gap_conn_params = {0};
     ble_gap_conn_sec_mode_t     security_mode   = {0};
 
@@ -527,38 +636,39 @@ static ret_code_t gap_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_OPEN( &security_mode );
 
     // Set the device name
-    if ( NRF_SUCCESS != sd_ble_gap_device_name_set( &security_mode, (const uint8_t*) GAP_DEVICE_NAME, strlen(GAP_DEVICE_NAME)))
+    if ( NRF_SUCCESS != sd_ble_gap_device_name_set( &security_mode, (const uint8_t*) BLE_P_DEVICE_NAME, strlen( BLE_P_DEVICE_NAME )))
     {
-        // Further actions on error... 
-        //error_handler();
+        status = eBLE_P_ERROR;
 
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        BLE_P_DBG_PRINT( "BLE_P: Setting device name error (GAP)!" );
     }
 
     // Set the apperance
-    // BLE_APPEARANCE_GENERIC_COMPUTER
-    if ( NRF_SUCCESS != sd_ble_gap_appearance_set( BLE_APPEARANCE_GENERIC_GLUCOSE_METER ))  
+    if ( NRF_SUCCESS != sd_ble_gap_appearance_set( BLE_P_DEVICE_APPEARANCE ))  
     {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        status = eBLE_P_ERROR;
+
+        BLE_P_DBG_PRINT( "BLE_P: Setting device appearance error (GAP)!" );
     }
 
     // Set up GAP
-    gap_conn_params.min_conn_interval   = MSEC_TO_UNITS( GAP_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
-    gap_conn_params.max_conn_interval   = MSEC_TO_UNITS( GAP_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
-    gap_conn_params.slave_latency       = GAP_SLAVE_LATENCY;
-    gap_conn_params.conn_sup_timeout    = MSEC_TO_UNITS( GAP_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
+    gap_conn_params.min_conn_interval   = MSEC_TO_UNITS( BLE_P_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
+    gap_conn_params.max_conn_interval   = MSEC_TO_UNITS( BLE_P_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
+    gap_conn_params.slave_latency       = BLE_P_SLAVE_LATENCY;
+    gap_conn_params.conn_sup_timeout    = MSEC_TO_UNITS( BLE_P_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
 
     // Set the PPCP - Peripheral Prefered Connection Parameters
     if ( NRF_SUCCESS != sd_ble_gap_ppcp_set( &gap_conn_params ))
     {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
+        status = eBLE_P_ERROR;
+
+        BLE_P_DBG_PRINT( "BLE_P: Setting Peripheral Prefered Connection Parameters (PPCP) error (GAP)!" ); 
     }
 
     return status;
 }
+
+
 
 
 // Init GATT
@@ -1010,8 +1120,10 @@ ble_p_status_t ble_p_init(void)
     // Init BLE stack
     status |= ble_p_stack_init();
 
-
-    gap_init();
+    // Init GAP (connection parameters)
+    status |= ble_p_gap_init();
+    
+    
     gatt_init();
     
     advertisement_init();
