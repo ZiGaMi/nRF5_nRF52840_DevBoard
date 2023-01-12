@@ -79,6 +79,76 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ *      List of BLE services
+ */
+typedef enum
+{
+    eBLE_P_SERVICE_SERIAL = 0,  /**<Serial service */
+    eBLE_P_SERVICE_DEV_IFO,      /**<Device info service */
+
+    eBLE_P_SERVICE_NUM_OF,
+} ble_p_service_opt_t;
+
+/**
+ *      Serial service characteristics
+ */
+typedef enum
+{
+    eBLE_P_SER_CHAR_TX = 0,     /**<Tx characteristics */
+    eBLE_P_SER_CHAR_RX,         /**<Rx characteristics */
+    
+    eBLE_P_SER_CHAR_NUM_OF,
+} ble_p_ser_char_opt_t;
+
+ /**
+  *     Device info characteristics
+  */
+typedef enum
+{
+    eBLE_P_DEV_CHAR_DEV_NAME = 0,   /**<Device name characteristics */
+    eBLE_P_DEV_CHAR_FW_VER,         /**<FW version characteristics */
+    eBLE_P_DEV_CHAR_HW_VER,         /**<HW version characteristics */
+    eBLE_P_DEV_CHAR_SERIAL_NUM,     /**<Serial number characteristics */
+    eBLE_P_DEV_CHAR_MAN_NAME,       /**<Manufacturer name characteristics */
+
+    eBLE_P_DEV_CHAR_NUM_OF,
+} ble_p_dev_char_opt_t;
+
+/** 
+ *      BLE Characteristics Property
+ */
+typedef enum
+{
+    eBLE_P_CHAR_PROP_READ     = 0x01,     /**<Read access */
+    eBLE_P_CHAR_PROP_WRITE    = 0x02,     /**<Write access + here included Write Wihtout Response */
+    eBLE_P_CHAR_PROP_NOTIFY   = 0x04,     /**<Notify */
+} ble_p_char_prop_opt_t;
+
+/**
+ *      BLE Characteristics data
+ */
+typedef struct
+{
+    ble_uuid_t              uuid;        /**<16-bit service UUID */
+    uint16_t                handle;         /**<Service handle */
+    ble_p_char_prop_opt_t   property;       /**<Characteristics property */
+
+} ble_p_char_t;
+
+/**
+ *      BLE Service data
+ */
+typedef struct
+{
+    ble_p_char_t *  p_char;         /**<Pointer to service characteristics */
+    uint8_t         char_num_of;    /**<Number of characteristics */
+
+    ble_uuid128_t   uuid_128;       /**<128-bit service UUID */
+    ble_uuid_t      uuid_16;        /**<16-bit service UUID */
+    uint16_t        handle;         /**<Service handle */
+} ble_p_service_t;
+
+/**
  *      BLE Peripheral data
  */
 typedef struct
@@ -86,6 +156,13 @@ typedef struct
     ble_gatts_char_handles_t    tx_char;            /**<TX characteristic handle */
     ble_gatts_char_handles_t    rx_char;            /**<RX characteristic handle */
     uint16_t                    conn_handle;        /**<Connection Handle on which event occurred */
+    
+    struct
+    {
+        uint16_t            serial;     /**<Serial service handle */
+        uint16_t            dev_info;   /**<Device service handle */
+    } service_handle;
+    
     bool                        is_adv;             /**<Advertisment active flag */ 
 
 } ble_p_data_t;
@@ -272,6 +349,73 @@ typedef struct
 #define BLE_P_MAX_CONN_PARAMS_UPDATE_COUNT          ( 3 )                          
 
 /**
+ *      Serial service UUID for simple UART emulation
+ *
+ *      Random generated custom UUID (with "https://www.uuidgenerator.net/"):
+ *
+ *      5EC0xxxx-BEEF-4FEB-842C-E90E79703DA7 
+ */
+#define BLE_P_SERVICE_SERIAL_UUID_BASE              { 0xA7, 0x3D, 0x70, 0x79, 0x0E, 0xE9, 0x2C, 0x84, 0xEB, 0x4F, 0xEF, 0xBE, 0x00, 0x00, 0xC0, 0x5E }
+#define BLE_P_SERVICE_SERIAL_UUID_16                ( 0x0100 )
+
+/**
+ *      Transmit characteristics 16-bit UUID
+ *
+ *  @note   Part of "Serial" service
+ */
+#define BLE_P_CHAR_TX_UUID                          ( 0x0101 )
+
+/**
+ *      Receive characteristics 16-bit UUID
+ *
+ *  @note   Part of "Serial" service
+ */
+#define BLE_P_CHAR_RX_UUID                          ( 0x0102 )
+
+/**
+ *      Device information service UUID
+ *
+ * @note    This UUID is defined by Bluetooth SIG standard.
+ *          Futher details: https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Assigned%20Numbers.pdf
+ */
+#define BLE_P_SERVICE_DEV_INFO_UUID                 ( 0x180A )
+
+/**
+ *      Device name characteristic UUID
+ *
+ * @note    Part of "Device info" service
+ */
+#define BLE_P_CHAR_DEV_NAME_UUID                    ( 0x2A00 )
+
+/**
+ *      Firmware revision string characteristic UUID
+ *
+ * @note    Part of "Device info" service
+ */
+#define BLE_P_CHAR_FW_VER_UUID                      ( 0x2A26 )
+
+/**
+ *      Hardware revision string characteristic UUID
+ *
+ * @note    Part of "Device info" service
+ */
+#define BLE_P_CHAR_HW_VER_UUID                      ( 0x2A27 )
+
+/**
+ *      Serial number string characteristic UUID
+ *
+ * @note    Part of "Device info" service
+ */
+#define BLE_P_CHAR_SER_NUM_UUID                     ( 0x2A25 )
+
+/**
+ *      Manufacturer name string characteristic UUID
+ *
+ * @note    Part of "Device info" service
+ */
+#define BLE_P_CHAR_MAN_NAME_UUID                    ( 0x2A29 )
+
+/**
  * 	Enable/Disable debug mode
  *
  * 	@note	Disable in release!
@@ -368,6 +512,7 @@ static ble_p_data_t g_ble_p =
     .conn_handle    = BLE_CONN_HANDLE_INVALID,
     .is_adv         = false,
 
+
 };  
     
 /**
@@ -398,6 +543,29 @@ BLE_ADVERTISING_DEF( g_adv_instance );
  *  @note   Leave this as it might come handy in future....
  */
 //NRF_BLE_QWR_DEF( g_qwr_instance );
+
+
+
+
+/**
+ *      Serial characteristics
+ */
+static ble_p_char_t g_ble_p_serial_chars[eBLE_P_SER_CHAR_NUM_OF] = 
+{
+    [eBLE_P_SER_CHAR_TX] = { .handle = 0,   .uuid = BLE_P_CHAR_TX_UUID, .property = ( eBLE_P_CHAR_PROP_NOTIFY | eBLE_P_CHAR_PROP_READ )     },
+    [eBLE_P_SER_CHAR_RX] = { .handle = 0,   .uuid = BLE_P_CHAR_RX_UUID, .property = ( eBLE_P_CHAR_PROP_WRITE )                              },
+    
+};
+
+/**
+ *      BLE Services
+ */
+static ble_p_service_t ble_p_service[ eBLE_P_SERVICE_NUM_OF ] =
+{
+    [ eBLE_P_SERVICE_SERIAL ]   = { .handle = 0, .uuid_128 = BLE_P_SERVICE_SERIAL_UUID_BASE, .uuid_16 = BLE_P_SERVICE_SERIAL_UUID_16, .p_char = &g_ble_p_serial_chars, .char_num_of = 2 },
+    [ eBLE_P_SERVICE_DEV_IFO ]  = {  },
+};
+
 
 
 
@@ -947,130 +1115,73 @@ static void ble_p_on_conn_pars_evt_hndl(ble_conn_params_evt_t * p_evt)
 
 static ble_p_status_t ble_p_service_init(void)
 {
-    ble_p_status_t  status = eBLE_P_OK;
-    ble_uuid_t      hrs_uuid    = {0};
-    uint16_t        hrs_handle  = 0;
+    ble_p_status_t      status          = eBLE_P_OK;
+    ble_uuid_t          ble_uuid        = {0};
+    ble_uuid128_t       base_uuid       = BLE_P_SERVICE_SERIAL_UUID_BASE;
 
 
-    #if 0
-        ///////////////////////////////////////////////////////////////////////////////////
-        // Assing UUID 
-        //BLE_UUID_BLE_ASSIGN( hrs_uuid, BLE_UUID_HEART_RATE_SERVICE );
-    
-        // Or EQUIVALENT
-        hrs_uuid.type = BLE_UUID_TYPE_BLE;
-        hrs_uuid.uuid = BLE_UUID_HEART_RATE_SERVICE;
-        ///////////////////////////////////////////////////////////////////////////////////
+    ble_uuid.uuid      = BLE_P_SERVICE_SERIAL_UUID_16;
 
-
-        // Register service
-        if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &hrs_uuid, &hrs_handle ))
-        {
-            // TODO: Change error status...
-            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
-        }
-
-    
-        ///////////////////////////////////////////////////////////////////////////////////
-        // Add characteristics to service
-    
-        ble_add_char_params_t       char_params     = {0};
-
-
-        uint8_t init_data[5] = { 0, 1, 2, 3, 4 };
-
-
-        char_params.uuid                = BLE_UUID_HEART_RATE_MEASUREMENT_CHAR;
-        char_params.max_len             = 20;
-        char_params.init_len            = 5;
-        char_params.is_var_len          = true;
-        char_params.char_props.notify   = 1;
-        char_params.cccd_write_access   = SEC_OPEN;
-        char_params.p_init_value        = (uint8_t*) &init_data;
-
-
-
-        // Register characteristics
-        if ( NRF_SUCCESS != characteristic_add( hrs_handle, &char_params, &char_handles ))
-        {
-            // TODO: Change error status...
-            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
-        }
-    #endif
-
-
-
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //          HOW TO MAKE CUSTOM SERVICE AND CHARACTERISTICS ???????????????
-
-    uint32_t            err_code;
-    ble_uuid_t          char_uuid;
-    ble_uuid128_t       base_uuid = THERMOSTAT_SERVICE_BASE;
-    uint16_t            custom_service_handle  = 0;
-
-
-    char_uuid.uuid      = THERMOSTAT_SERVICE_UUID;
-
-    if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &base_uuid, &char_uuid.type ))
+    if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &base_uuid, &ble_uuid.type ))
     {
         // TODO: Change error status...
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
     // Register service
-    if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &char_uuid, &custom_service_handle ))
+    if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &custom_service_handle ))
     {
         // TODO: Change error status...
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
     }
 
 
-    // Add RX characteristics
-    ble_add_char_params_t rx_char_params = {0};
+    #if 0
+        // Add RX characteristics
+        ble_add_char_params_t rx_char_params = {0};
 
-    rx_char_params.uuid                     = BLE_THERMOSTAT_RX_CHARACTERISTIC;
-    rx_char_params.uuid_type                = char_uuid.type;
-    rx_char_params.init_len                 = sizeof(uint8_t);
-    rx_char_params.max_len                  = 250;
-    rx_char_params.is_var_len               = true;
-    rx_char_params.char_props.write         = 1;
-    rx_char_params.char_props.write_wo_resp = 1;
-    rx_char_params.read_access              = SEC_OPEN;
-    rx_char_params.write_access             = SEC_OPEN;
-    rx_char_params.cccd_write_access        = SEC_OPEN;
+        rx_char_params.uuid                     = BLE_P_CHAR_RX_UUID;
+        rx_char_params.uuid_type                = char_uuid.type;
+        rx_char_params.init_len                 = sizeof(uint8_t);
+        rx_char_params.max_len                  = 250;
+        rx_char_params.is_var_len               = true;
+        rx_char_params.char_props.write         = 1;
+        rx_char_params.char_props.write_wo_resp = 1;
+        rx_char_params.read_access              = SEC_OPEN;
+        rx_char_params.write_access             = SEC_OPEN;
+        rx_char_params.cccd_write_access        = SEC_OPEN;
 
-    // Register characteristics
-    if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &rx_char_params, &rx_char_handles ))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
-    }
+        // Register characteristics
+        if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &rx_char_params, &rx_char_handles ))
+        {
+            // TODO: Change error status...
+            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
+        }
 
     
-    // Add Tx characteristics
-    ble_add_char_params_t tx_char_params = {0};
+        // Add Tx characteristics
+        ble_add_char_params_t tx_char_params = {0};
 
-    tx_char_params.uuid                     = BLE_THERMOSTAT_TX_CHARACTERISTIC;
-    tx_char_params.uuid_type                = char_uuid.type;
-    tx_char_params.init_len                 = sizeof(uint8_t);
-    tx_char_params.max_len                  = 250;
-    tx_char_params.is_var_len               = true;
-    tx_char_params.char_props.write         = 0;
-    tx_char_params.char_props.write_wo_resp = 0;
-    tx_char_params.char_props.read          = 0;
-    tx_char_params.char_props.notify        = 1;
-    tx_char_params.read_access              = SEC_OPEN;
-    tx_char_params.write_access             = SEC_OPEN;
-    tx_char_params.cccd_write_access        = SEC_OPEN;
+        tx_char_params.uuid                     = BLE_P_CHAR_TX_UUID;
+        tx_char_params.uuid_type                = char_uuid.type;
+        tx_char_params.init_len                 = sizeof(uint8_t);
+        tx_char_params.max_len                  = 250;
+        tx_char_params.is_var_len               = true;
+        tx_char_params.char_props.write         = 0;
+        tx_char_params.char_props.write_wo_resp = 0;
+        tx_char_params.char_props.read          = 0;
+        tx_char_params.char_props.notify        = 1;
+        tx_char_params.read_access              = SEC_OPEN;
+        tx_char_params.write_access             = SEC_OPEN;
+        tx_char_params.cccd_write_access        = SEC_OPEN;
 
-    // Register characteristics
-    if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &tx_char_params, &tx_char_handles))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
-    }
+        // Register characteristics
+        if ( NRF_SUCCESS != characteristic_add( custom_service_handle, &tx_char_params, &tx_char_handles))
+        {
+            // TODO: Change error status...
+            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        }
+    #endif
 
     return status;
 }
