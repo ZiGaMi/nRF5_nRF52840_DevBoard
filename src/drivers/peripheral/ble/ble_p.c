@@ -96,24 +96,24 @@ typedef struct
  *
  *          Further details: https://devzone.nordicsemi.com/f/nordic-q-a/33504/what-does-app_ble_conn_cfg_tag-do 
  */ 
-#define BLE_P_CONN_CFG_TAG                  ( 1 )
+#define BLE_P_CONN_CFG_TAG                      ( 1 )
 
 /**
  *      Main BLE Peripheral event priority
  */
-#define BLE_P_EVENT_PRIORITY                3       // TODO: Find out what that number means!!!
+#define BLE_P_EVENT_PRIORITY                    3       // TODO: Find out what that number means!!!
 
 /**
  *		BLE Peripheral reception buffer size
  *
  *	Unit: byte
  */                     
-#define BLE_P_RX_BUF_SIZE                   ( 512 )  
+#define BLE_P_RX_BUF_SIZE                       ( 512 )  
 
 /**
  *      Device name
  */
-#define BLE_P_DEVICE_NAME                   ( "MyBLE" )
+#define BLE_P_DEVICE_NAME                       ( "MyBLE" )
 
 /**
  *      Device BLE appearance
@@ -122,7 +122,7 @@ typedef struct
  *
  *          Look at "ble_types.h" file for pre-defined values.
  */
-#define BLE_P_DEVICE_APPEARANCE             ( BLE_APPEARANCE_GENERIC_COMPUTER )
+#define BLE_P_DEVICE_APPEARANCE                 ( BLE_APPEARANCE_GENERIC_COMPUTER )
 
 /**
  *      Minimum connection interval
@@ -139,7 +139,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_MIN_CONN_INTERVAL_MS          ( 100 ) 
+#define BLE_P_MIN_CONN_INTERVAL_MS              ( 100 ) 
 
 /**
  *      Maximum connection interval
@@ -156,7 +156,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_MAX_CONN_INTERVAL_MS          ( 200 ) 
+#define BLE_P_MAX_CONN_INTERVAL_MS              ( 200 ) 
 
 /**
  *      Slave latency
@@ -174,7 +174,7 @@ typedef struct
  * @note    Value of 0 means that Peripheral BLE device needs to address
  *          every connection event triggered by Central BLE device.
  */
-#define BLE_P_SLAVE_LATENCY                 ( 0 )
+#define BLE_P_SLAVE_LATENCY                     ( 0 )
 
 /**
  *      Supervsision timeout
@@ -192,7 +192,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_SUPERVISION_TIMEOUT_MS        ( 4000 )
+#define BLE_P_SUPERVISION_TIMEOUT_MS            ( 4000 )
 
  /**
   *     Advertisement inteval
@@ -209,7 +209,7 @@ typedef struct
   *
   *     Unit: ms
   */
-#define BLE_P_ADV_INTERVAL_MS                 ( 200.0 )
+#define BLE_P_ADV_INTERVAL_MS                   ( 200.0 )
 
 /**
  *      Advertisement duration
@@ -451,7 +451,7 @@ static ble_p_status_t   ble_p_gap_init              (void);
 static ble_p_status_t   ble_p_gatt_init             (void);
 static void             ble_p_adv_evt_hndl          (ble_adv_evt_t ble_adv_evt);
 static ble_p_status_t   ble_p_adv_init              (void);
-static ble_p_status_t   ble_p_conn_pars_init        (void);
+static ble_p_status_t   ble_p_conn_init             (void);
 static void             ble_p_on_conn_pars_evt_hndl (ble_conn_params_evt_t * p_evt);
 
 
@@ -891,14 +891,14 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
     }
 }
 
-
-
-
-
-
-
-// Init connection parameters
-static ble_p_status_t ble_p_conn_pars_init(void)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Initialize BLE connection library
+*
+* @return 		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+static ble_p_status_t ble_p_conn_init(void)
 {
     ble_p_status_t          status          = eBLE_P_OK;
     ble_conn_params_init_t  conn_par_init   = {0};
@@ -1160,9 +1160,8 @@ ble_p_status_t ble_p_init(void)
     status |= ble_p_adv_init();
 
     // Init BLE connection library
-    status |= ble_p_conn_pars_init();
+    status |= ble_p_conn_init();
 
-    //conn_pars_init();
 
     custom_service_init();
 
