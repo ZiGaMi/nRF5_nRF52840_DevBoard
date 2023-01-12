@@ -98,11 +98,10 @@ typedef struct
  */ 
 #define BLE_P_CONN_CFG_TAG                  ( 1 )
 
-
 /**
  *      Main BLE Peripheral event priority
  */
-#define BLE_P_EVENT_PRIORITY                3
+#define BLE_P_EVENT_PRIORITY                3       // TODO: Find out what that number means!!!
 
 /**
  *		BLE Peripheral reception buffer size
@@ -224,7 +223,7 @@ typedef struct
  *   
  *  Unit: ms
  */
-#define BLE_P_ADV_DURATION_MS                   ( 15000 )
+#define BLE_P_ADV_DURATION_MS                   ( 60000 )
 
 /**
  *      Enable/Disable start of addvertisement on disconnection event
@@ -374,24 +373,35 @@ static ble_p_data_t g_ble_p =
 };  
     
 /**
- *  GATT instance
+ *      Define GATT instance
+ *
+ *  @note   Calling this macro also register observer in background!
  */
 NRF_BLE_GATT_DEF( g_gatt_instance );
 
 /**
- *  Advertising instance
+ *      Define Advertising instance
+ *
+ *  @note   Calling this macro also register observer in background!
  */ 
 BLE_ADVERTISING_DEF( g_adv_instance );
 
+/**
+ *      Declare Queued Write instance
+ *
+ *  @brief  The Queued Writes module provides an implementation of 
+ *          Queued Writes, using the Generic Attribute Profile (GATT) 
+ *          Server interface of the SoftDevice. Add this module to your 
+ *          GATT server implementation to enable support for Queued Writes 
+ *          for some or all of the characteristics.
+ *
+ *  @note   Calling this macro also register observer in background!
+ *
+ *  @note   Leave this as it might come handy in future....
+ */
+//NRF_BLE_QWR_DEF( g_qwr_instance );
 
 
-
-
-
-
-
-// For single connected device
-NRF_BLE_QWR_DEF( m_qwr );
 
 
 
@@ -441,6 +451,10 @@ static ble_p_status_t   ble_p_gap_init              (void);
 static ble_p_status_t   ble_p_gatt_init             (void);
 static void             ble_p_adv_evt_hndl          (ble_adv_evt_t ble_adv_evt);
 static ble_p_status_t   ble_p_adv_init              (void);
+static ble_p_status_t   ble_p_conn_pars_init        (void);
+static void             ble_p_on_conn_pars_evt_hndl (ble_conn_params_evt_t * p_evt);
+
+
 
 
 
@@ -576,15 +590,6 @@ static inline void ble_p_evt_on_connect(ble_evt_t const * p_ble_evt)
     // Assing connection info to handle
     g_ble_p.conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 
-    // Assign a connection handle to a given instance of the Queued Writes module
-    if ( NRF_SUCCESS != nrf_ble_qwr_conn_handle_assign( &m_qwr, g_ble_p.conn_handle ))
-    {
-        // TODO: How to handle this error???
-
-        BLE_P_DBG_PRINT( "BLE_P: Assign a connection handle to QWR error!" );
-        BLE_P_ASSERT( 0 );
-    }
-
     // Stop advertisement
     // NOTE: This is done automatically by BLE SDK library!
     //(void) ble_p_adv_stop();
@@ -636,6 +641,7 @@ static inline void ble_p_evt_on_disconnect(ble_evt_t const * p_ble_evt)
 static inline void ble_p_evt_on_write(ble_evt_t const * p_ble_evt)
 {
     // Client write to RX characteristics?
+    // TODO: Check for this...
     if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
     {
         // Get data and lenght
@@ -745,19 +751,23 @@ static ble_p_status_t ble_p_gap_init(void)
         BLE_P_DBG_PRINT( "BLE_P: Setting device appearance error (GAP)!" );
     }
 
-    // Set up GAP
-    gap_conn_params.min_conn_interval   = MSEC_TO_UNITS( BLE_P_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
-    gap_conn_params.max_conn_interval   = MSEC_TO_UNITS( BLE_P_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
-    gap_conn_params.slave_latency       = BLE_P_SLAVE_LATENCY;
-    gap_conn_params.conn_sup_timeout    = MSEC_TO_UNITS( BLE_P_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
 
-    // Set the PPCP - Peripheral Prefered Connection Parameters
-    if ( NRF_SUCCESS != sd_ble_gap_ppcp_set( &gap_conn_params ))
-    {
-        status = eBLE_P_ERROR;
+    // Don't need this here as ble conn param will set this up
+    #if 0
+        // Set up GAP
+        gap_conn_params.min_conn_interval   = MSEC_TO_UNITS( BLE_P_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
+        gap_conn_params.max_conn_interval   = MSEC_TO_UNITS( BLE_P_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
+        gap_conn_params.slave_latency       = BLE_P_SLAVE_LATENCY;
+        gap_conn_params.conn_sup_timeout    = MSEC_TO_UNITS( BLE_P_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
 
-        BLE_P_DBG_PRINT( "BLE_P: Setting Peripheral Prefered Connection Parameters (PPCP) error (GAP)!" ); 
-    }
+        // Set the PPCP - Peripheral Prefered Connection Parameters
+        if ( NRF_SUCCESS != sd_ble_gap_ppcp_set( &gap_conn_params ))
+        {
+            status = eBLE_P_ERROR;
+
+            BLE_P_DBG_PRINT( "BLE_P: Setting Peripheral Prefered Connection Parameters (PPCP) error (GAP)!" ); 
+        }
+    #endif
 
     return status;
 }
@@ -884,33 +894,42 @@ static void ble_p_adv_evt_hndl(ble_adv_evt_t ble_adv_evt)
 
 
 
-/*
-static void nrf_qwr_error_hndl(uint32_t nrf_error)
+
+
+
+// Init connection parameters
+static ble_p_status_t ble_p_conn_pars_init(void)
 {
-    // Handler errors here...
+    ble_p_status_t          status          = eBLE_P_OK;
+    ble_conn_params_init_t  conn_par_init   = {0};
+    ble_gap_conn_params_t   ppcp_cfg        = {0};
 
-}
-*/
 
-// Init services
-static ret_code_t services_init(void)
-{
-    ret_code_t          status      = NRF_SUCCESS;
-    nrf_ble_qwr_init_t  qwr_init    = { 0 };
+    conn_par_init.p_conn_params                  = NULL;
+    conn_par_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+    conn_par_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
+    conn_par_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
+    conn_par_init.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
+    conn_par_init.disconnect_on_fail             = false;
+    conn_par_init.evt_handler                    = ble_p_on_conn_pars_evt_hndl;
 
-    // Register error hander
-    //qwr_init.error_handler = nrf_qwr_error_hndl;
+    // Setup PPCP - Peripheral Prefered Connection Parameters
+    ppcp_cfg.min_conn_interval   = MSEC_TO_UNITS( BLE_P_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
+    ppcp_cfg.max_conn_interval   = MSEC_TO_UNITS( BLE_P_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
+    ppcp_cfg.slave_latency       = BLE_P_SLAVE_LATENCY;
+    ppcp_cfg.conn_sup_timeout    = MSEC_TO_UNITS( BLE_P_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
+    conn_par_init.p_conn_params  = &ppcp_cfg;
 
-    // Init QWR
-    if ( NRF_SUCCESS != nrf_ble_qwr_init( &m_qwr, &qwr_init ))
+    // Init BLE connection library
+    if ( NRF_SUCCESS != ble_conn_params_init( &conn_par_init ))
     {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
+        status = eBLE_P_ERROR;
+
+        BLE_P_DBG_PRINT( "BLE_P: BLE connection parameters library init error!" ); 
     }
 
     return status;
 }
-
 
 /**@brief Function for handling the Connection Parameters Module.
  *
@@ -923,7 +942,7 @@ static ret_code_t services_init(void)
  *
  * @param[in] p_evt  Event received from the Connection Parameters Module.
  */
-static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
+static void ble_p_on_conn_pars_evt_hndl(ble_conn_params_evt_t * p_evt)
 {
     ret_code_t err_code;
 
@@ -935,43 +954,6 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
         // TODO: 
         //APP_ERROR_CHECK(err_code);
     }
-}
-
-
-/**@brief Function for handling a Connection Parameters error.
- *
- * @param[in] nrf_error  Error code containing information about what went wrong.
- */
-static void conn_params_error_handler(uint32_t nrf_error)
-{
-    // TODO: 
-   // APP_ERROR_HANDLER(nrf_error);
-}
-
-
-// Init connection parameters
-static ret_code_t conn_pars_init(void)
-{
-    ret_code_t              status  = NRF_SUCCESS;
-    ble_conn_params_init_t  cp_init = {0};
-
-
-    cp_init.p_conn_params                  = NULL;
-    cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
-    cp_init.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
-    cp_init.disconnect_on_fail             = false;
-    cp_init.evt_handler                    = on_conn_params_evt;
-    cp_init.error_handler                  = conn_params_error_handler;
-
-    if ( NRF_SUCCESS != ble_conn_params_init( &cp_init ))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" ); 
-    }
-
-    return status;
 }
 
 
@@ -1177,13 +1159,10 @@ ble_p_status_t ble_p_init(void)
     // Init advertisement
     status |= ble_p_adv_init();
 
+    // Init BLE connection library
+    status |= ble_p_conn_pars_init();
 
-
-
-    
-    services_init();
-    conn_pars_init(); 
-
+    //conn_pars_init();
 
     custom_service_init();
 
@@ -1502,79 +1481,94 @@ __attribute__((weak)) void ble_p_evt_cb(const ble_p_evt_t event)
 
 void ble_p_hndl(void)
 {
+    #if 0    
+        static uint8_t                encoded_hrm[5] = { 0, 1, 2, 3};
+        uint16_t               len;
+        uint16_t               hvx_len;
+        ble_gatts_hvx_params_t hvx_params = {0};
+
+        len     = 5;
+        hvx_len = len;
+
+
+        // To HRV characteristics
+        hvx_params.handle = char_handles.value_handle;   
+        hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
+        hvx_params.offset = 0;
+        hvx_params.p_len  = &hvx_len;
+        hvx_params.p_data = encoded_hrm;
+
+
+
+        static uint8_t data[250] = {0};
+        uint16_t len2 = 250;
+
+        // ZIGA (10.01.2023): MTU is set to 250, effectively can exchange up to 244 bytes!
+        data[0]++;
+        data[243]++;
+
+        ble_gatts_hvx_params_t hvx_params_tx = 
+        {
+            .handle     = tx_char_handles.value_handle,
+            .p_data     = (uint8_t*) &data,
+            .p_len      = &len2,
+            .type       = BLE_GATT_HVX_NOTIFICATION
+        };
+
+
+
+        // Send value if connected and notifying
+        if ( g_ble_p.conn_handle != BLE_CONN_HANDLE_INVALID )
+        {
+
+            encoded_hrm[4]++;
+            encoded_hrm[0]--;
+
+            // Send data
+            ret_code_t status = NRF_SUCCESS;
+        
+            // Send
+            status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params );
+
+            //if ( NRF_SUCCESS != sd_ble_gatts_hvx( m_conn_handle, &hvx_params ))
+            if ( NRF_SUCCESS != status )
+            {
+                // Further actions on error... 
+                //error_handler();  
+
+                //err_cnt++;
+            }
+        
+
+        
+            status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params_tx );
+
+            if ( NRF_SUCCESS != status )
+            {
+                // Further actions on error... 
+                //error_handler();  
+
+                //err_cnt++;
+            }
+        
+
+        }
+    #endif
+
     
-    static uint8_t                encoded_hrm[5] = { 0, 1, 2, 3};
-    uint16_t               len;
-    uint16_t               hvx_len;
-    ble_gatts_hvx_params_t hvx_params = {0};
+    static uint8_t cnt[200] = {0};
+    bool is_connected = false;
 
-    len     = 5;
-    hvx_len = len;
+    (void) ble_p_is_connected( &is_connected );
 
-
-    // To HRV characteristics
-    hvx_params.handle = char_handles.value_handle;   
-    hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
-    hvx_params.offset = 0;
-    hvx_params.p_len  = &hvx_len;
-    hvx_params.p_data = encoded_hrm;
-
-
-
-    static uint8_t data[250] = {0};
-    uint16_t len2 = 250;
-
-    // ZIGA (10.01.2023): MTU is set to 250, effectively can exchange up to 244 bytes!
-    data[0]++;
-    data[243]++;
-
-    ble_gatts_hvx_params_t hvx_params_tx = 
-    {
-        .handle     = tx_char_handles.value_handle,
-        .p_data     = (uint8_t*) &data,
-        .p_len      = &len2,
-        .type       = BLE_GATT_HVX_NOTIFICATION
-    };
-
-
-
-    // Send value if connected and notifying
-    if ( g_ble_p.conn_handle != BLE_CONN_HANDLE_INVALID )
+    if ( true == is_connected )
     {
 
-        encoded_hrm[4]++;
-        encoded_hrm[0]--;
+        cnt[1]++;
+        cnt[199]++;
 
-        // Send data
-        ret_code_t status = NRF_SUCCESS;
-        
-        // Send
-        status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params );
-
-        //if ( NRF_SUCCESS != sd_ble_gatts_hvx( m_conn_handle, &hvx_params ))
-        if ( NRF_SUCCESS != status )
-        {
-            // Further actions on error... 
-            //error_handler();  
-
-            //err_cnt++;
-        }
-        
-
-        
-        status = sd_ble_gatts_hvx( g_ble_p.conn_handle, &hvx_params_tx );
-
-        if ( NRF_SUCCESS != status )
-        {
-            // Further actions on error... 
-            //error_handler();  
-
-            //err_cnt++;
-        }
-        
-
+        ble_p_write((const uint8_t*) &cnt, 200 );
     }
-
 
     led_toggle( eLED_3 );
 }

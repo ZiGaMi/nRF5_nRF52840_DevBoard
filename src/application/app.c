@@ -194,6 +194,8 @@ void app_hndl_10ms(void)
 void app_hndl_100ms(void)
 {
     // Further actions here...
+
+    ble_p_hndl();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
