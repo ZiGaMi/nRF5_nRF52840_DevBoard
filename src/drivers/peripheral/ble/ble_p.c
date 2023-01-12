@@ -83,8 +83,10 @@
  */
 typedef struct
 {
-    uint16_t    conn_handle;        /**<Connection Handle on which event occurred */
-    bool        is_adv;             /**<Advertisment active flag */ 
+    ble_gatts_char_handles_t    tx_char;            /**<TX characteristic handle */
+    ble_gatts_char_handles_t    rx_char;            /**<RX characteristic handle */
+    uint16_t                    conn_handle;        /**<Connection Handle on which event occurred */
+    bool                        is_adv;             /**<Advertisment active flag */ 
 
 } ble_p_data_t;
 
@@ -96,24 +98,24 @@ typedef struct
  *
  *          Further details: https://devzone.nordicsemi.com/f/nordic-q-a/33504/what-does-app_ble_conn_cfg_tag-do 
  */ 
-#define BLE_P_CONN_CFG_TAG                      ( 1 )
+#define BLE_P_CONN_CFG_TAG                          ( 1 )
 
 /**
  *      Main BLE Peripheral event priority
  */
-#define BLE_P_EVENT_PRIORITY                    3       // TODO: Find out what that number means!!!
+#define BLE_P_EVENT_PRIORITY                        3       // TODO: Find out what that number means!!!
 
 /**
  *		BLE Peripheral reception buffer size
  *
  *	Unit: byte
  */                     
-#define BLE_P_RX_BUF_SIZE                       ( 512 )  
+#define BLE_P_RX_BUF_SIZE                           ( 512 )  
 
 /**
  *      Device name
  */
-#define BLE_P_DEVICE_NAME                       ( "MyBLE" )
+#define BLE_P_DEVICE_NAME                           ( "MyBLE" )
 
 /**
  *      Device BLE appearance
@@ -122,7 +124,7 @@ typedef struct
  *
  *          Look at "ble_types.h" file for pre-defined values.
  */
-#define BLE_P_DEVICE_APPEARANCE                 ( BLE_APPEARANCE_GENERIC_COMPUTER )
+#define BLE_P_DEVICE_APPEARANCE                     ( BLE_APPEARANCE_GENERIC_COMPUTER )
 
 /**
  *      Minimum connection interval
@@ -139,7 +141,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_MIN_CONN_INTERVAL_MS              ( 100 ) 
+#define BLE_P_MIN_CONN_INTERVAL_MS                  ( 100 ) 
 
 /**
  *      Maximum connection interval
@@ -156,7 +158,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_MAX_CONN_INTERVAL_MS              ( 200 ) 
+#define BLE_P_MAX_CONN_INTERVAL_MS                  ( 200 ) 
 
 /**
  *      Slave latency
@@ -174,7 +176,7 @@ typedef struct
  * @note    Value of 0 means that Peripheral BLE device needs to address
  *          every connection event triggered by Central BLE device.
  */
-#define BLE_P_SLAVE_LATENCY                     ( 0 )
+#define BLE_P_SLAVE_LATENCY                         ( 0 )
 
 /**
  *      Supervsision timeout
@@ -192,7 +194,7 @@ typedef struct
  *
  *  Unit: ms
  */
-#define BLE_P_SUPERVISION_TIMEOUT_MS            ( 4000 )
+#define BLE_P_SUPERVISION_TIMEOUT_MS                ( 4000 )
 
  /**
   *     Advertisement inteval
@@ -209,7 +211,7 @@ typedef struct
   *
   *     Unit: ms
   */
-#define BLE_P_ADV_INTERVAL_MS                   ( 200.0 )
+#define BLE_P_ADV_INTERVAL_MS                       ( 200.0 )
 
 /**
  *      Advertisement duration
@@ -223,12 +225,12 @@ typedef struct
  *   
  *  Unit: ms
  */
-#define BLE_P_ADV_DURATION_MS                   ( 60000 )
+#define BLE_P_ADV_DURATION_MS                       ( 60000 )
 
 /**
  *      Enable/Disable start of addvertisement on disconnection event
  */
-#define BLE_P_START_ADV_ON_DISCONNECT           ( 1 )
+#define BLE_P_START_ADV_ON_DISCONNECT               ( 1 )
 
 /**
  *      Company ID
@@ -242,15 +244,39 @@ typedef struct
  *
  * @note    Company ID = 0x0059 for Nordic Semiconductor ASA
  */
-#define BLE_P_ADV_MAN_DATA_COMPANY_ID           ( 0x0059 )
+#define BLE_P_ADV_MAN_DATA_COMPANY_ID               ( 0x0059 )
 
+/**
+ *      Time from initiating event (connect or start of notification) 
+ *      to first time sd_ble_gap_conn_param_update is called
+ *
+ * @note    This setting is related to "ble_coon_params" library!
+ *
+ *  Unit: ms
+ */
+#define BLE_P_FIRST_CONN_PARAMS_UPDATE_DELAY_MS     ( 5000 )                   
+
+/**
+ *      Time between each call to sd_ble_gap_conn_param_update 
+ *      after the first call
+ *
+ * @note    This setting is related to "ble_coon_params" library!
+ *
+ *  Unit: ms
+ */
+#define BLE_P_NEXT_CONN_PARAMS_UPDATE_DELAY_MS      ( 30000 )      
+
+/**
+ *      Number of attempts before giving up connection parameter negotiation
+ */         
+#define BLE_P_MAX_CONN_PARAMS_UPDATE_COUNT          ( 3 )                          
 
 /**
  * 	Enable/Disable debug mode
  *
  * 	@note	Disable in release!
  */
-#define BLE_P_DEBUG_EN						( 1 )
+#define BLE_P_DEBUG_EN                              ( 1 )
 
 #ifndef DEBUG
     #undef BLE_P_DEBUG_EN
@@ -262,7 +288,7 @@ typedef struct
  *
  *  @note   Disble in release!
  */
- #define BLE_P_ASSERT_EN                    ( 1 )
+ #define BLE_P_ASSERT_EN                            ( 1 )
 
 #ifndef DEBUG
     #undef PAR_CFG_ASSERT_EN
@@ -273,9 +299,9 @@ typedef struct
  * 	Debug communication port macros
  */
 #if ( 1 == BLE_P_DEBUG_EN )
-	#define BLE_P_DBG_PRINT( ... )			( cli_printf( __VA_ARGS__ ))
+	#define BLE_P_DBG_PRINT( ... )                  ( cli_printf( __VA_ARGS__ ))
 #else
-	#define BLE_P_DBG_PRINT( ... )			{ ; }
+	#define BLE_P_DBG_PRINT( ... )                  { ; }
 
 #endif
 
@@ -283,9 +309,9 @@ typedef struct
  *  Assertion definition
  */
  #if ( BLE_P_ASSERT_EN )
-	#define BLE_P_ASSERT(x)                 { PROJECT_CONFIG_ASSERT(x) }
+	#define BLE_P_ASSERT(x)                         { PROJECT_CONFIG_ASSERT(x) }
  #else
-  #define BLE_P_ASSERT)                     { ; }
+  #define BLE_P_ASSERT)                             { ; }
  #endif
 
 /**
@@ -306,34 +332,6 @@ _Static_assert( BLE_P_SUPERVISION_TIMEOUT_MS > (( 1 + BLE_P_SLAVE_LATENCY ) * 2 
 
 // Advertisement interval must be in valid range
 _Static_assert(( BLE_P_ADV_INTERVAL_MS >= 20) && ( BLE_P_ADV_INTERVAL_MS <= 10240 ));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/******************************************************************
- *      CONNECTIONS
- ******************************************************************/
-
-#define FIRST_CONN_PARAMS_UPDATE_DELAY      APP_TIMER_TICKS(5000)                   /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
-#define NEXT_CONN_PARAMS_UPDATE_DELAY       APP_TIMER_TICKS(30000)                  /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
-#define MAX_CONN_PARAMS_UPDATE_COUNT        3                                       /**< Number of attempts before giving up the connection parameter negotiation. */
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -417,7 +415,7 @@ static ble_uuid_t m_adv_uuids[] =
 
 
 
-static ble_gatts_char_handles_t    char_handles    = {0};
+//static ble_gatts_char_handles_t    char_handles    = {0};
 
 #define THERMOSTAT_SERVICE_BASE                                                \
   {                                                                            \
@@ -453,7 +451,7 @@ static void             ble_p_adv_evt_hndl          (ble_adv_evt_t ble_adv_evt);
 static ble_p_status_t   ble_p_adv_init              (void);
 static ble_p_status_t   ble_p_conn_init             (void);
 static void             ble_p_on_conn_pars_evt_hndl (ble_conn_params_evt_t * p_evt);
-
+static ble_p_status_t   ble_p_service_init          (void);
 
 
 
@@ -751,24 +749,6 @@ static ble_p_status_t ble_p_gap_init(void)
         BLE_P_DBG_PRINT( "BLE_P: Setting device appearance error (GAP)!" );
     }
 
-
-    // Don't need this here as ble conn param will set this up
-    #if 0
-        // Set up GAP
-        gap_conn_params.min_conn_interval   = MSEC_TO_UNITS( BLE_P_MIN_CONN_INTERVAL_MS, UNIT_1_25_MS );
-        gap_conn_params.max_conn_interval   = MSEC_TO_UNITS( BLE_P_MAX_CONN_INTERVAL_MS, UNIT_1_25_MS );
-        gap_conn_params.slave_latency       = BLE_P_SLAVE_LATENCY;
-        gap_conn_params.conn_sup_timeout    = MSEC_TO_UNITS( BLE_P_SUPERVISION_TIMEOUT_MS, UNIT_10_MS );
-
-        // Set the PPCP - Peripheral Prefered Connection Parameters
-        if ( NRF_SUCCESS != sd_ble_gap_ppcp_set( &gap_conn_params ))
-        {
-            status = eBLE_P_ERROR;
-
-            BLE_P_DBG_PRINT( "BLE_P: Setting Peripheral Prefered Connection Parameters (PPCP) error (GAP)!" ); 
-        }
-    #endif
-
     return status;
 }
 
@@ -833,7 +813,8 @@ static ble_p_status_t ble_p_adv_init(void)
     if ( NRF_SUCCESS != ble_advertising_init( &g_adv_instance, &adv_init ))
     {
         // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        BLE_P_DBG_PRINT( "BLE_P: BLE Adveritising library init error!" );
+        BLE_P_ASSERT( 0 );
     }
     
     // Setup advertising config tag
@@ -906,9 +887,9 @@ static ble_p_status_t ble_p_conn_init(void)
 
 
     conn_par_init.p_conn_params                  = NULL;
-    conn_par_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-    conn_par_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
-    conn_par_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
+    conn_par_init.first_conn_params_update_delay = APP_TIMER_TICKS( BLE_P_FIRST_CONN_PARAMS_UPDATE_DELAY_MS );
+    conn_par_init.next_conn_params_update_delay  = APP_TIMER_TICKS( BLE_P_NEXT_CONN_PARAMS_UPDATE_DELAY_MS );
+    conn_par_init.max_conn_params_update_count   = BLE_P_MAX_CONN_PARAMS_UPDATE_COUNT;
     conn_par_init.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
     conn_par_init.disconnect_on_fail             = false;
     conn_par_init.evt_handler                    = ble_p_on_conn_pars_evt_hndl;
@@ -925,13 +906,16 @@ static ble_p_status_t ble_p_conn_init(void)
     {
         status = eBLE_P_ERROR;
 
-        BLE_P_DBG_PRINT( "BLE_P: BLE connection parameters library init error!" ); 
+        BLE_P_DBG_PRINT( "BLE_P: BLE connection parameters library init error!" );
+        BLE_P_ASSERT( 0 );
     }
 
     return status;
 }
 
-/**@brief Function for handling the Connection Parameters Module.
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Function for handling the Connection Parameters Module.
  *
  * @details This function will be called for all events in the Connection Parameters Module which
  *          are passed to the application.
@@ -942,70 +926,77 @@ static ble_p_status_t ble_p_conn_init(void)
  *
  * @param[in] p_evt  Event received from the Connection Parameters Module.
  */
+ ////////////////////////////////////////////////////////////////////////////////
 static void ble_p_on_conn_pars_evt_hndl(ble_conn_params_evt_t * p_evt)
 {
-    ret_code_t err_code;
-
-    
-    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
+    // Negotiation procedure failed
+    if ( BLE_CONN_PARAMS_EVT_FAILED == p_evt->evt_type )
     {
-        err_code = sd_ble_gap_disconnect( g_ble_p.conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE );
-        
-        // TODO: 
-        //APP_ERROR_CHECK(err_code);
+        if ( NRF_SUCCESS != sd_ble_gap_disconnect( g_ble_p.conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE ))
+        {
+            // TODO: How to handle this error?
+
+            BLE_P_DBG_PRINT( "BLE_P: Disconnection error! (sd_ble_gap_disconnect)" );
+            BLE_P_ASSERT( 0 );
+        }
     }
 }
 
 
 
 
-static void custom_service_init(void)
+static ble_p_status_t ble_p_service_init(void)
 {
-    ble_uuid_t  hrs_uuid    = {0};
-    uint16_t    hrs_handle  = 0;
+    ble_p_status_t  status = eBLE_P_OK;
+    ble_uuid_t      hrs_uuid    = {0};
+    uint16_t        hrs_handle  = 0;
 
-    ///////////////////////////////////////////////////////////////////////////////////
-    // Assing UUID 
-    //BLE_UUID_BLE_ASSIGN( hrs_uuid, BLE_UUID_HEART_RATE_SERVICE );
+
+    #if 0
+        ///////////////////////////////////////////////////////////////////////////////////
+        // Assing UUID 
+        //BLE_UUID_BLE_ASSIGN( hrs_uuid, BLE_UUID_HEART_RATE_SERVICE );
     
-    // Or EQUIVALENT
-    hrs_uuid.type = BLE_UUID_TYPE_BLE;
-    hrs_uuid.uuid = BLE_UUID_HEART_RATE_SERVICE;
-    ///////////////////////////////////////////////////////////////////////////////////
+        // Or EQUIVALENT
+        hrs_uuid.type = BLE_UUID_TYPE_BLE;
+        hrs_uuid.uuid = BLE_UUID_HEART_RATE_SERVICE;
+        ///////////////////////////////////////////////////////////////////////////////////
 
 
-    // Register service
-    if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &hrs_uuid, &hrs_handle ))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
-    }
+        // Register service
+        if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &hrs_uuid, &hrs_handle ))
+        {
+            // TODO: Change error status...
+            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        }
 
     
-    ///////////////////////////////////////////////////////////////////////////////////
-    // Add characteristics to service
-    ble_add_char_params_t       char_params     = {0};
+        ///////////////////////////////////////////////////////////////////////////////////
+        // Add characteristics to service
+    
+        ble_add_char_params_t       char_params     = {0};
 
 
-    uint8_t init_data[5] = { 0, 1, 2, 3, 4 };
+        uint8_t init_data[5] = { 0, 1, 2, 3, 4 };
 
 
-    char_params.uuid                = BLE_UUID_HEART_RATE_MEASUREMENT_CHAR;
-    char_params.max_len             = 20;
-    char_params.init_len            = 5;
-    char_params.is_var_len          = true;
-    char_params.char_props.notify   = 1;
-    char_params.cccd_write_access   = SEC_OPEN;
-    char_params.p_init_value        = (uint8_t*) &init_data;
+        char_params.uuid                = BLE_UUID_HEART_RATE_MEASUREMENT_CHAR;
+        char_params.max_len             = 20;
+        char_params.init_len            = 5;
+        char_params.is_var_len          = true;
+        char_params.char_props.notify   = 1;
+        char_params.cccd_write_access   = SEC_OPEN;
+        char_params.p_init_value        = (uint8_t*) &init_data;
 
 
 
-    // Register characteristics
-    if ( NRF_SUCCESS != characteristic_add( hrs_handle, &char_params, &char_handles ))
-    {
-        // TODO: Change error status...
-        BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
-    }
+        // Register characteristics
+        if ( NRF_SUCCESS != characteristic_add( hrs_handle, &char_params, &char_handles ))
+        {
+            // TODO: Change error status...
+            BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        }
+    #endif
 
 
 
@@ -1081,6 +1072,7 @@ static void custom_service_init(void)
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
     }
 
+    return status;
 }
 
 
@@ -1162,10 +1154,8 @@ ble_p_status_t ble_p_init(void)
     // Init BLE connection library
     status |= ble_p_conn_init();
 
-
-    custom_service_init();
-
-
+    // Init services
+    status |= ble_p_service_init();
 
     // Init success
     if ( eBLE_P_OK == status )
@@ -1175,8 +1165,6 @@ ble_p_status_t ble_p_init(void)
         // Start advertising     
         status = ble_p_adv_start();
     }
-
-
 
     return status;
 }
