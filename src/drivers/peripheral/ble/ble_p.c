@@ -819,8 +819,7 @@ static inline void ble_p_evt_on_disconnect(ble_evt_t const * p_ble_evt)
 static inline void ble_p_evt_on_write(ble_evt_t const * p_ble_evt)
 {
     // Client write to RX characteristics?
-    // TODO: Check for this...
-    if ( p_ble_evt->evt.gatts_evt.params.write.handle == rx_char_handles.value_handle )
+    if ( p_ble_evt->evt.gatts_evt.params.write.handle == g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_RX].handle.value_handle )
     {
         // Get data and lenght
         const uint8_t * p_data  = p_ble_evt->evt.gatts_evt.params.write.data;
@@ -1179,45 +1178,40 @@ static ble_p_status_t ble_p_serv_init(ble_p_service_t * const p_serv)
 
 static ble_p_status_t ble_p_char_init(ble_p_char_t * const p_char, const uint16_t service_handle, const uint8_t uuid_type)
 {
-    ble_p_status_t status = eBLE_P_OK;
+    ble_p_status_t          status      = eBLE_P_OK;
+    ble_add_char_params_t   char_param  = {0};
 
-    ble_gatts_char_md_t char_md         = {0};
-    ble_gatts_attr_t    attr_char_value = {0};
-    ble_uuid_t          ble_uuid        = {0};
-    ble_gatts_attr_md_t attr_md         = {0};
+    // Setup characteristics parameters
+    char_param.uuid                     = p_char->uuid;
+    char_param.uuid_type                = uuid_type;
+    char_param.init_len                 = 0;
+    char_param.max_len                  = 250;      // TODO: Add define...
+    char_param.is_var_len               = true;
+    char_param.read_access              = SEC_OPEN;
+    char_param.write_access             = SEC_OPEN;
+    char_param.cccd_write_access        = SEC_OPEN;
+    
+    // Write access
+    if ( p_char->property & eBLE_P_CHAR_PROP_WRITE )
+    {
+        char_param.char_props.write         = 1;
+        char_param.char_props.write_wo_resp = 1;
+    }
 
+    // Read access
+    if ( p_char->property & eBLE_P_CHAR_PROP_READ )
+    {
+        char_param.char_props.read = 1;
+    }
 
-    char_md.char_props.write         = 1;
-    char_md.char_props.write_wo_resp = 0;
-    char_md.char_props.read          = 1;
-    char_md.p_char_user_desc         = NULL;
-    char_md.p_char_pf                = NULL;
-    char_md.p_user_desc_md           = NULL;
-    char_md.p_cccd_md                = NULL;
-    char_md.p_sccd_md                = NULL;
-
-    ble_uuid.type = uuid_type;
-    ble_uuid.uuid = p_char->uuid;
-
-
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN( &attr_md.read_perm );
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN( &attr_md.write_perm );
-
-    attr_md.vloc    = BLE_GATTS_VLOC_STACK;
-    attr_md.rd_auth = 0;
-    attr_md.wr_auth = 1;
-    attr_md.vlen    = 1;
-
-
-    attr_char_value.p_uuid    = &ble_uuid;
-    attr_char_value.p_attr_md = &attr_md;
-    attr_char_value.init_len  = 0;
-    attr_char_value.init_offs = 0;
-    attr_char_value.p_value   = "Test";
-    attr_char_value.max_len   = 4;
+    // Notify enabled
+    if ( p_char->property & eBLE_P_CHAR_PROP_NOTIFY )
+    {
+        char_param.char_props.notify = 1;
+    }
 
     // Register characteristics to SoftDevice
-    if ( NRF_SUCCESS != sd_ble_gatts_characteristic_add( service_handle, &char_md, &attr_char_value, &p_char->handle ))
+    if ( NRF_SUCCESS != characteristic_add( service_handle, &char_param, &p_char->handle ))
     {
         status = eBLE_P_ERROR;
 
@@ -1238,7 +1232,8 @@ static ble_p_status_t ble_p_serv_char_init(void)
     status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL] );
 
 
-    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[0], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
+    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_RX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
+    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_TX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
 
 
     status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_DEV_INFO] );
@@ -1616,7 +1611,7 @@ ble_p_status_t ble_p_write(const uint8_t * const p_data, const uint16_t len)
         // Prepare notification data
         const ble_gatts_hvx_params_t hvx_params_tx = 
         {
-            .handle     = tx_char_handles.value_handle,
+            .handle     = g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_TX].handle.value_handle,
             .p_data     = (uint8_t*) p_data,
             .p_len      = (uint16_t*) &len,
             .type       = BLE_GATT_HVX_NOTIFICATION
