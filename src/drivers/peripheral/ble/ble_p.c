@@ -141,7 +141,6 @@ typedef struct
 {
     ble_p_char_t *  p_char;         /**<Pointer to service characteristics */
     uint8_t         char_num_of;    /**<Number of characteristics */
-    uint8_t         uuid_type;      /**< UUID type for Service Base UUID. */
     ble_uuid128_t   uuid_128;       /**<128-bit service UUID */
     ble_uuid_t      uuid_16;        /**<16-bit service UUID */
     uint16_t        handle;         /**<Service handle */
@@ -1178,6 +1177,57 @@ static ble_p_status_t ble_p_serv_init(ble_p_service_t * const p_serv)
 }
 
 
+static ble_p_status_t ble_p_char_init(ble_p_char_t * const p_char, const uint16_t service_handle, const uint8_t uuid_type)
+{
+    ble_p_status_t status = eBLE_P_OK;
+
+    ble_gatts_char_md_t char_md         = {0};
+    ble_gatts_attr_t    attr_char_value = {0};
+    ble_uuid_t          ble_uuid        = {0};
+    ble_gatts_attr_md_t attr_md         = {0};
+
+
+    char_md.char_props.write         = 1;
+    char_md.char_props.write_wo_resp = 0;
+    char_md.char_props.read          = 1;
+    char_md.p_char_user_desc         = NULL;
+    char_md.p_char_pf                = NULL;
+    char_md.p_user_desc_md           = NULL;
+    char_md.p_cccd_md                = NULL;
+    char_md.p_sccd_md                = NULL;
+
+    ble_uuid.type = uuid_type;
+    ble_uuid.uuid = p_char->uuid;
+
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN( &attr_md.read_perm );
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN( &attr_md.write_perm );
+
+    attr_md.vloc    = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth = 0;
+    attr_md.wr_auth = 1;
+    attr_md.vlen    = 1;
+
+
+    attr_char_value.p_uuid    = &ble_uuid;
+    attr_char_value.p_attr_md = &attr_md;
+    attr_char_value.init_len  = 0;
+    attr_char_value.init_offs = 0;
+    attr_char_value.p_value   = "Test";
+    attr_char_value.max_len   = 4;
+
+    // Register characteristics to SoftDevice
+    if ( NRF_SUCCESS != sd_ble_gatts_characteristic_add( service_handle, &char_md, &attr_char_value, &p_char->handle ))
+    {
+        status = eBLE_P_ERROR;
+
+        BLE_P_DBG_PRINT( "BLE_P: Adding characteristics error!" );
+        BLE_P_ASSERT( 0 );
+    }
+
+    return status;
+}
+
 
 static ble_p_status_t ble_p_serv_char_init(void)
 {
@@ -1186,6 +1236,10 @@ static ble_p_status_t ble_p_serv_char_init(void)
     
 
     status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL] );
+
+
+    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[0], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
+
 
     status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_DEV_INFO] );
 
