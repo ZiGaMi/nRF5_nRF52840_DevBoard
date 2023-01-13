@@ -83,8 +83,8 @@
  */
 typedef enum
 {
-    eBLE_P_SERVICE_SERIAL = 0,  /**<Serial service */
-    eBLE_P_SERVICE_DEV_IFO,      /**<Device info service */
+    eBLE_P_SERVICE_SERIAL = 0,      /**<Serial service */
+    eBLE_P_SERVICE_DEV_INFO,        /**<Device info service */
 
     eBLE_P_SERVICE_NUM_OF,
 } ble_p_service_opt_t;
@@ -129,10 +129,9 @@ typedef enum
  */
 typedef struct
 {
-    ble_uuid_t              uuid;        /**<16-bit service UUID */
-    uint16_t                handle;         /**<Service handle */
-    ble_p_char_prop_opt_t   property;       /**<Characteristics property */
-
+    ble_gatts_char_handles_t    handle;         /**<Characteristic handle */
+    ble_p_char_prop_opt_t       property;       /**<Characteristic property */
+    uint16_t                    uuid;           /**<16-bit service UUID */
 } ble_p_char_t;
 
 /**
@@ -571,10 +570,10 @@ static ble_p_char_t g_ble_p_dev_info_chars[eBLE_P_DEV_CHAR_NUM_OF] =
 static ble_p_service_t g_ble_p_service[ eBLE_P_SERVICE_NUM_OF ] =
 {
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //                              Service handle          UUID 16-bit                                 UUID 128-bit                                Service characteristics                                 Number of characteristics
+    //                              UUID 16-bit                                         UUID 128-bit                                Service characteristics                                     Number of characteristics
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    [ eBLE_P_SERVICE_SERIAL ]   = { .handle = 0,        .uuid_16 = BLE_P_SERVICE_SERIAL_UUID_16,    .uuid_128 = BLE_P_SERVICE_SERIAL_UUID_BASE,     .p_char = (ble_p_char_t*) &g_ble_p_serial_chars,    .char_num_of = eBLE_P_SER_CHAR_NUM_OF        },
-    [ eBLE_P_SERVICE_DEV_IFO ]  = { .handle = 0,        .uuid_16 = BLE_P_SERVICE_DEV_INFO_UUID,     .uuid_128 = 0,                                  .p_char = (ble_p_char_t*) &g_ble_p_dev_info_chars,  .char_num_of = eBLE_P_DEV_CHAR_NUM_OF        },
+    [ eBLE_P_SERVICE_SERIAL ]   = { .uuid_16.uuid = BLE_P_SERVICE_SERIAL_UUID_16,    .uuid_128 = BLE_P_SERVICE_SERIAL_UUID_BASE,     .p_char = (ble_p_char_t*) &g_ble_p_serial_chars,       .char_num_of = eBLE_P_SER_CHAR_NUM_OF        },
+    [ eBLE_P_SERVICE_DEV_INFO ] = { .uuid_16.uuid = BLE_P_SERVICE_DEV_INFO_UUID,     .uuid_128 = {0},                                .p_char = (ble_p_char_t*) &g_ble_p_dev_info_chars,     .char_num_of = eBLE_P_DEV_CHAR_NUM_OF        },
 };
 
 
@@ -633,7 +632,7 @@ static void             ble_p_adv_evt_hndl          (ble_adv_evt_t ble_adv_evt);
 static ble_p_status_t   ble_p_adv_init              (void);
 static ble_p_status_t   ble_p_conn_init             (void);
 static void             ble_p_on_conn_pars_evt_hndl (ble_conn_params_evt_t * p_evt);
-static ble_p_status_t   ble_p_service_init          (void);
+static ble_p_status_t   ble_p_serv_char_init        (void);
 
 
 
@@ -1125,40 +1124,91 @@ static void ble_p_on_conn_pars_evt_hndl(ble_conn_params_evt_t * p_evt)
 }
 
 
+static inline bool ble_p_is_uuid_vendor(const uint8_t * const p_uuid128)
+{
+    bool is_vendor_specific = false;
+    
+    // If non-zero value is found deduce that is vendor specific UUID
+    for ( uint8_t byte = 0; byte < 16; byte++)
+    {
+        if ( 0x00 != p_uuid128[byte] )
+        {
+            is_vendor_specific = true;
+            break;
+        }
+    }
+
+    return is_vendor_specific;
+}
 
 
-static ble_p_status_t ble_p_service_init(void)
+static ble_p_status_t ble_p_serv_init(ble_p_service_t * const p_serv)
 {
     ble_p_status_t status = eBLE_P_OK;
-    
-    
 
-    //ble_uuid_t          ble_uuid        = {0};
-    //ble_uuid128_t       base_uuid       = BLE_P_SERVICE_SERIAL_UUID_BASE;
-
-
-    //ble_uuid.uuid      = BLE_P_SERVICE_SERIAL_UUID_16;
-
-    //uint16_t custom_service_handle = 0;
-
-
-
-    if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_128, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type ))
+    // If using Vendor specific UUID
+    if ( true == ble_p_is_uuid_vendor((const uint8_t*) &p_serv->uuid_128.uuid128 ))
     {
-        status = eBLE_P_ERROR;
+        // Add Vendor specific UUID
+        if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &p_serv->uuid_128, &p_serv->uuid_16.type ))
+        {
+            status = eBLE_P_ERROR;
 
-        BLE_P_DBG_PRINT( "BLE_P: Adding vendor specific UUID error!" ); 
-        BLE_P_ASSERT( 0 );
+            BLE_P_DBG_PRINT( "BLE_P: Adding vendor specific UUID error!" ); 
+            BLE_P_ASSERT( 0 );
+        }
+    }
+
+    // BLE standard service
+    else
+    {
+        p_serv->uuid_16.type = BLE_UUID_TYPE_BLE;
     }
 
     // Register service
-    if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle ))
+    if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &p_serv->uuid_16, &p_serv->handle ))  
     {
         status = eBLE_P_ERROR;
 
         BLE_P_DBG_PRINT( "BLE_P: Adding GATTS service error!" ); 
         BLE_P_ASSERT( 0 );
-    }
+    } 
+
+    return status;
+}
+
+
+
+static ble_p_status_t ble_p_serv_char_init(void)
+{
+    ble_p_status_t status = eBLE_P_OK;
+    
+    
+
+    status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL] );
+
+    status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_DEV_INFO] );
+
+
+
+    #if 0
+        if ( NRF_SUCCESS != sd_ble_uuid_vs_add( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_128, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type ))
+        {
+            status = eBLE_P_ERROR;
+
+            BLE_P_DBG_PRINT( "BLE_P: Adding vendor specific UUID error!" ); 
+            BLE_P_ASSERT( 0 );
+        }
+
+        // Register service
+        if ( NRF_SUCCESS != sd_ble_gatts_service_add( BLE_GATTS_SRVC_TYPE_PRIMARY, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16, &g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle ))
+        {
+            status = eBLE_P_ERROR;
+
+            BLE_P_DBG_PRINT( "BLE_P: Adding GATTS service error!" ); 
+            BLE_P_ASSERT( 0 );
+        }
+    #endif
 
     
     
@@ -1294,8 +1344,8 @@ ble_p_status_t ble_p_init(void)
     // Init BLE connection library
     status |= ble_p_conn_init();
 
-    // Init services
-    status |= ble_p_service_init();
+    // Init services and characteristics
+    status |= ble_p_serv_char_init();
 
     // Init success
     if ( eBLE_P_OK == status )
