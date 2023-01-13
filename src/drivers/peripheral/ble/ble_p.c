@@ -105,8 +105,7 @@ typedef enum
   */
 typedef enum
 {
-    eBLE_P_DEV_CHAR_DEV_NAME = 0,   /**<Device name characteristics */
-    eBLE_P_DEV_CHAR_FW_VER,         /**<FW version characteristics */
+    eBLE_P_DEV_CHAR_FW_VER = 0,         /**<FW version characteristics */
     eBLE_P_DEV_CHAR_HW_VER,         /**<HW version characteristics */
     eBLE_P_DEV_CHAR_SERIAL_NUM,     /**<Serial number characteristics */
     eBLE_P_DEV_CHAR_MAN_NAME,       /**<Manufacturer name characteristics */
@@ -370,13 +369,6 @@ typedef struct
 #define BLE_P_SERVICE_DEV_INFO_UUID                 ( 0x180A )
 
 /**
- *      Device name characteristic UUID
- *
- * @note    Part of "Device info" service
- */
-#define BLE_P_CHAR_DEV_NAME_UUID                    ( 0x2A00 )
-
-/**
  *      Firmware revision string characteristic UUID
  *
  * @note    Part of "Device info" service
@@ -542,10 +534,10 @@ BLE_ADVERTISING_DEF( g_adv_instance );
 static ble_p_char_t g_ble_p_serial_chars[eBLE_P_SER_CHAR_NUM_OF] = 
 {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------
-    //                          Char handle     Char UUID                       Char property
+    //                              Char handle     Char UUID                       Char property
     // ----------------------------------------------------------------------------------------------------------------------------------------------------
-    [eBLE_P_SER_CHAR_TX] = {    .handle = 0,    .uuid = BLE_P_CHAR_TX_UUID,     .property = ( eBLE_P_CHAR_PROP_NOTIFY | eBLE_P_CHAR_PROP_READ )     },
-    [eBLE_P_SER_CHAR_RX] = {    .handle = 0,    .uuid = BLE_P_CHAR_RX_UUID,     .property = ( eBLE_P_CHAR_PROP_WRITE )                              },
+    [eBLE_P_SER_CHAR_RX]    = {    .handle = 0,    .uuid = BLE_P_CHAR_RX_UUID,     .property = ( eBLE_P_CHAR_PROP_WRITE )                              },
+    [eBLE_P_SER_CHAR_TX]    = {    .handle = 0,    .uuid = BLE_P_CHAR_TX_UUID,     .property = ( eBLE_P_CHAR_PROP_NOTIFY | eBLE_P_CHAR_PROP_READ )     },
 };
 
 /**
@@ -556,7 +548,6 @@ static ble_p_char_t g_ble_p_dev_info_chars[eBLE_P_DEV_CHAR_NUM_OF] =
     // ----------------------------------------------------------------------------------------------------------------------------------------------------
     //                                  Char handle     Char UUID                               Char property
     // ----------------------------------------------------------------------------------------------------------------------------------------------------
-    [eBLE_P_DEV_CHAR_DEV_NAME]      = {  .handle = 0,   .uuid = BLE_P_CHAR_DEV_NAME_UUID,       .property = ( eBLE_P_CHAR_PROP_READ )               },
     [eBLE_P_DEV_CHAR_FW_VER]        = {  .handle = 0,   .uuid = BLE_P_CHAR_FW_VER_UUID,         .property = ( eBLE_P_CHAR_PROP_READ )               },
     [eBLE_P_DEV_CHAR_HW_VER]        = {  .handle = 0,   .uuid = BLE_P_CHAR_HW_VER_UUID,         .property = ( eBLE_P_CHAR_PROP_READ )               },
     [eBLE_P_DEV_CHAR_SERIAL_NUM]    = {  .handle = 0,   .uuid = BLE_P_CHAR_SER_NUM_UUID,        .property = ( eBLE_P_CHAR_PROP_READ )               },
@@ -569,49 +560,11 @@ static ble_p_char_t g_ble_p_dev_info_chars[eBLE_P_DEV_CHAR_NUM_OF] =
 static ble_p_service_t g_ble_p_service[ eBLE_P_SERVICE_NUM_OF ] =
 {
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //                              UUID 16-bit                                         UUID 128-bit                                Service characteristics                                     Number of characteristics
+    //                              UUID 16-bit                                         UUID 128-bit                                        Service characteristics                                     Number of characteristics
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    [ eBLE_P_SERVICE_SERIAL ]   = { .uuid_16.uuid = BLE_P_SERVICE_SERIAL_UUID_16,    .uuid_128 = BLE_P_SERVICE_SERIAL_UUID_BASE,     .p_char = (ble_p_char_t*) &g_ble_p_serial_chars,       .char_num_of = eBLE_P_SER_CHAR_NUM_OF        },
-    [ eBLE_P_SERVICE_DEV_INFO ] = { .uuid_16.uuid = BLE_P_SERVICE_DEV_INFO_UUID,     .uuid_128 = {0},                                .p_char = (ble_p_char_t*) &g_ble_p_dev_info_chars,     .char_num_of = eBLE_P_DEV_CHAR_NUM_OF        },
+    [ eBLE_P_SERVICE_SERIAL ]   = { .uuid_16.uuid = BLE_P_SERVICE_SERIAL_UUID_16,    .uuid_128.uuid128 = BLE_P_SERVICE_SERIAL_UUID_BASE,     .p_char = (ble_p_char_t*) &g_ble_p_serial_chars,       .char_num_of = eBLE_P_SER_CHAR_NUM_OF        },
+    [ eBLE_P_SERVICE_DEV_INFO ] = { .uuid_16.uuid = BLE_P_SERVICE_DEV_INFO_UUID,     .uuid_128.uuid128 = {0},                                .p_char = (ble_p_char_t*) &g_ble_p_dev_info_chars,     .char_num_of = eBLE_P_DEV_CHAR_NUM_OF        },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-// Available services as it will be part of advertisement packet
-static ble_uuid_t m_adv_uuids[] = 
-{ 
-    {   .uuid = BLE_UUID_HEALTH_THERMOMETER_SERVICE,    .type = BLE_UUID_TYPE_BLE  },   // SIG standard service
-    {   .uuid = BLE_UUID_BATTERY_SERVICE,               .type = BLE_UUID_TYPE_BLE  },   // SIG standard service
-};
-
-
-
-//static ble_gatts_char_handles_t    char_handles    = {0};
-
-#define THERMOSTAT_SERVICE_BASE                                                \
-  {                                                                            \
-    0x2A, 0x94, 0x01, 0x0a, 0x34, 0xc4, 0x3e, 0xbc, 0xe5, 0x4b, 0xb3, 0x8b,    \
-        0x00, 0x00, 0x9d, 0xaf                                                 \
-  }
-
-#define THERMOSTAT_SERVICE_UUID   0x1000
-
-
-#define BLE_THERMOSTAT_RX_CHARACTERISTIC   0x1001
-#define BLE_THERMOSTAT_TX_CHARACTERISTIC   0x1002
-
-static ble_gatts_char_handles_t    rx_char_handles    = {0};
-static ble_gatts_char_handles_t    tx_char_handles    = {0};
-
 
 
 
@@ -658,6 +611,7 @@ static ble_p_status_t ble_p_stack_init(void)
         status = eBLE_P_ERROR;
         
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable request error!" );
+        BLE_P_ASSERT( 0 ); 
     }
 
     // Configure BLE stack
@@ -666,6 +620,7 @@ static ble_p_status_t ble_p_stack_init(void)
         status = eBLE_P_ERROR;
         
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice default config set error!" );
+        BLE_P_ASSERT( 0 ); 
     }
 
     // Enable BLE stack
@@ -674,6 +629,7 @@ static ble_p_status_t ble_p_stack_init(void)
         status = eBLE_P_ERROR;
         
         BLE_P_DBG_PRINT( "BLE_P: SoftDevice enable error!" );
+        BLE_P_ASSERT( 0 ); 
     }
     
     // Register BLE event callback
@@ -1185,7 +1141,7 @@ static ble_p_status_t ble_p_char_init(ble_p_char_t * const p_char, const uint16_
     char_param.uuid                     = p_char->uuid;
     char_param.uuid_type                = uuid_type;
     char_param.init_len                 = 0;
-    char_param.max_len                  = 250;      // TODO: Add define...
+    char_param.max_len                  = 20;      // TODO: Add define...
     char_param.is_var_len               = true;
     char_param.read_access              = SEC_OPEN;
     char_param.write_access             = SEC_OPEN;
@@ -1211,6 +1167,15 @@ static ble_p_status_t ble_p_char_init(ble_p_char_t * const p_char, const uint16_
     }
 
     // Register characteristics to SoftDevice
+    ret_code_t status_sd = characteristic_add( service_handle, &char_param, &p_char->handle );
+
+    if ( NRF_SUCCESS != status_sd )
+    {
+               BLE_P_DBG_PRINT( "BLE_P: Adding characteristics error!" );
+        BLE_P_ASSERT( 0 ); 
+    }
+
+    /*
     if ( NRF_SUCCESS != characteristic_add( service_handle, &char_param, &p_char->handle ))
     {
         status = eBLE_P_ERROR;
@@ -1218,6 +1183,7 @@ static ble_p_status_t ble_p_char_init(ble_p_char_t * const p_char, const uint16_
         BLE_P_DBG_PRINT( "BLE_P: Adding characteristics error!" );
         BLE_P_ASSERT( 0 );
     }
+    */
 
     return status;
 }
@@ -1227,16 +1193,27 @@ static ble_p_status_t ble_p_serv_char_init(void)
 {
     ble_p_status_t status = eBLE_P_OK;
     
+    for ( uint32_t serv_idx = 0; serv_idx < eBLE_P_SERVICE_NUM_OF; serv_idx++ )
+    {   
+        // Init service
+        status |= ble_p_serv_init( &g_ble_p_service[serv_idx] );
+
+        // Init all characteristics within service
+        for ( uint32_t char_idx = 0; char_idx < g_ble_p_service[serv_idx].char_num_of; char_idx++ )
+        {
+            status |= ble_p_char_init( &g_ble_p_service[serv_idx].p_char[char_idx], g_ble_p_service[serv_idx].handle, g_ble_p_service[serv_idx].uuid_16.type );
+        }
+    }
     
 
-    status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL] );
+    //status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL] );
 
 
-    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_RX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
-    status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_TX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
+    //status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_RX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
+    //status |= ble_p_char_init( &g_ble_p_service[eBLE_P_SERVICE_SERIAL].p_char[eBLE_P_SER_CHAR_TX], g_ble_p_service[eBLE_P_SERVICE_SERIAL].handle, g_ble_p_service[eBLE_P_SERVICE_SERIAL].uuid_16.type );
 
 
-    status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_DEV_INFO] );
+    //status |= ble_p_serv_init( &g_ble_p_service[eBLE_P_SERVICE_DEV_INFO] );
 
 
 
